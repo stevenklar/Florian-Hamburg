@@ -1,0 +1,81 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* REPAIR.SCRIPT - Script zum Reparieren von Objekten und Entschärfen von 	*/
+/* 		   Bomben	                                                */
+/*                                                                              */
+/* Dieses Commandscript regelt das Reparieren von Fahrzeugen und Objekten 	*/
+/* durch Einsatzkräfte.	Weiterhin regelt dieses Script das Entschärfen von	*/
+/* Bomben durch den Kampfmittelräumdienst.                      		*/
+/*                                                                              */
+/* Original-Script: Emergency 4 Sixteen Tons					*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 13.08.2008, SM,   Initial-Version                                            */
+/* 13.08.2008, SM,   Gefahrgut-Behandlung hinzugefügt				*/
+/*                                                                              */
+/* **************************************************************************** */
+
+object Repair : CommandScript
+{
+	Repair()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPriority(600);
+		SetSelfClickActivation(true);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		if(Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle vehicle(Target);
+			if (vehicle.HasCommand("kmrd_target"))
+				return true;
+			if (!vehicle.IsValid() || ((vehicle.GetVehicleType() == VT_POLICE_PHC || vehicle.GetVehicleType() == VT_AMBULANCE_RHC || vehicle.GetVehicleType() == VT_THW_FGRT_BH) && !vehicle.IsOnGround()))
+				return false;
+			if (!vehicle.IsCivilCar() && vehicle.GetEnergy() > 0.1f * vehicle.GetMaxEnergy() && vehicle.GetEnergy() < vehicle.GetMaxEnergy())
+				return true;
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_ANY);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		if (obj.HasCommand("kmrd_target"))
+		{
+			Caller->PushActionSwitchAnim(ACTION_APPEND, "pumping_water");
+			Caller->PushActionWait(ACTION_APPEND, 10);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "Entschaerfen", Target, 0, false);
+		} else
+		{
+			Caller->PushActionRepair(ACTION_APPEND, Target);
+		}		
+	}
+};
+
+object Entschaerfen : CommandScript
+{
+	Entschaerfen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		obj.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_check",Caller,4,false);
+		Caller->PushActionSwitchAnim(ACTION_APPEND, "idle");
+	}
+};

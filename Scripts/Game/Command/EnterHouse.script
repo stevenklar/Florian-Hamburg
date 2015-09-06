@@ -1,0 +1,204 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* ENTERHOUSE.SCRIPT - Script welches das Betreten von Häusern regelt           */
+/*                                                                              */
+/* Dieses Commandscript ermögicht es, ein Haus auch mit Schläuchen zu betreten.	*/
+/*                                                                              */
+/* Original-Script: Sixteen Tons, Eins Eins Zwo Modifications                   */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 13.10.2007, SM,   Sollten die Türen von OpenHouses mittels EINSÄTZE-Script   */
+/*		     verriegelt worden sein, so müssen diese mit dem            */
+/*		     Command TuerOeffnen aufgebrochen werden.                   */
+/* 13.10.2007, SM,   Wenn Rauch im Gebäude, dann Meldung ausgeben, dass das	*/
+/*		     Gebäude nur mit Atemschutz betreten werden kann.           */
+/* 25.10.2007, SM,   Animation des FW-Manns bei der Türöffnung hinzugefügt.     */
+/* 04.11.2008, SM,   THFLUG3R Flugzeug bei Türöffnungsabfrage ausgeschlossen    */
+/*                                                                              */
+/* **************************************************************************** */
+
+object EnterHouse : CommandScript
+{
+	Vector EntrancePos;
+
+	bool moveOut, fromDLK;
+	int h0;
+
+
+	EnterHouse()
+	{
+		SetValidTargets(ACTOR_OPEN_HOUSE);
+		SetDeselectCaller(false);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleExists(CPE_ACCESSIBLE_HOUSE);
+		SetPriority(110);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetType()!=ACTOR_PERSON || Target->GetType()!=ACTOR_OPEN_HOUSE)
+			return false;
+
+		OpenHouse targetHouse(Target);
+
+		targetHouse.CloseDoor(targetHouse.GetEntranceDoorID());
+
+		Person person(Caller);
+		if (person.GetEnteredCarID() != -1 && !targetHouse.HasGroundEntrance() && person.CanEnterHouseFromDLK(&targetHouse))
+		{
+			fromDLK = true;
+			return true;
+		}
+		fromDLK = false;
+
+		if (!targetHouse.IsValid() || targetHouse.IsOpen() || !targetHouse.HasGroundEntrance())
+		{
+			return false;
+		}
+
+
+		if(targetHouse.GetEntranceDoorID() == 0)
+		{
+			return false;
+		}
+
+		if (person.GetEnteredCarID() != -1)
+			return false;
+
+		if (targetHouse.IsLocked() && person.GetEquipment() == EQUIP_FIREAXE)
+			return false;
+
+		if (person.GetEnteredHouseID() != -1)
+		{
+			Actor ha = Game::GetActor(person.GetEnteredHouseID());
+			OpenHouse sourceHouse(&ha);
+			if (!sourceHouse.HasGroundEntrance() || sourceHouse.GetEntranceDoorID() == 0)
+			{
+				return false;
+			}
+
+			moveOut = true;
+			h0 = sourceHouse.GetID();
+			EntrancePos = sourceHouse.GetEntrancePosition(false);
+		}
+		else
+			moveOut = false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		OpenHouse targetHouse(Target);
+		Person person(Caller);
+
+		Vector DoorFront, DoorBack;
+
+		Vector DoorFront = targetHouse.GetEntrancePosition(true);
+		Vector DoorBack = targetHouse.GetEntrancePosition(false);
+
+		// WENN RAUCH IM GEBÄUDE, DANN KANN ES NUR MIT ATEMSCHUTZ BETRETEN WERDEN
+		if (targetHouse.IsBurning() && (!person.HasCommand("ich_bin_ein_atemschutztraeger")))
+		{
+			Audio::PlaySample("mod:Audio/FX/voices/hints/gebaeude_atemschutz.wav");
+			return;
+		}
+
+		// WENN DAS OPENHOUSE MITTELS EINSAETZE-SCRIPT VERSCHLOSSEN WURDE, DANN HINWEIS UND ABBRUCH
+		if (!targetHouse.IsFlagSet(OF_ACCESSIBLE) && !targetHouse.HasNamePrefix("thflug3r"))
+		{
+			Audio::PlaySample("mod:Audio/FX/voices/hints/tuer_verschlossen.wav");
+			return;
+		}
+
+		if (fromDLK)
+		{
+
+			// WENN DAS OPENHOUSE MITTELS EINSAETZE-SCRIPT VERSCHLOSSEN WURDE UND VON DER DLK AUS EINGESTIEGEN WERDEN SOLL, DANN ÖFFNEN UND ENTRIEGELN
+			targetHouse.SetFlag(OF_ACCESSIBLE);
+			Caller->PushActionEnterHouse(ACTION_NEWLIST, Target);
+			return;
+		}
+		if (moveOut)
+		{
+			Actor house = Game::GetActor(h0);
+			Caller->PushActionMove(ACTION_NEWLIST, EntrancePos, true);
+			Caller->PushActionLeaveHouse(ACTION_APPEND, &house);
+			Caller->PushActionMove(ACTION_APPEND, DoorFront, true);
+			Caller->PushActionTurnTo(ACTION_APPEND, DoorBack);
+			Caller->PushActionEnterHouse(ACTION_APPEND, Target);
+		}
+		else
+		{
+			Caller->PushActionMove(ACTION_NEWLIST, DoorFront, true);
+			Caller->PushActionTurnTo(ACTION_APPEND, DoorBack);
+			Caller->PushActionEnterHouse(ACTION_APPEND, Target);
+		}
+	}
+};
+
+object TuerOeffnen : CommandScript
+
+{
+	TuerOeffnen()
+	{
+		SetIcon("TuerOeffnen");
+		SetCursor("TuerOeffnen");
+		SetValidTargets(ACTOR_OPEN_HOUSE);
+		SetPossibleCallers(ACTOR_PERSON);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid())
+			return false;
+
+		if(Target->GetType() == ACTOR_OPEN_HOUSE)
+		{
+			OpenHouse targethouse(Target);
+			if (!targethouse.IsFlagSet(OF_ACCESSIBLE) && !targethouse.HasNamePrefix("thflug3r"))
+				return true;
+			else
+				return false;
+		}
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch(childID)
+		{
+			case 0:
+				OpenHouse targetHouse(Target);
+				targetHouse.CloseDoor(targetHouse.GetEntranceDoorID());
+				Vector DoorFront = targetHouse.GetEntrancePosition(true);
+				Vector DoorBack = targetHouse.GetEntrancePosition(false);
+				if (!targetHouse.IsFlagSet(OF_ACCESSIBLE))
+				{
+					targetHouse.SetFlag(OF_ACCESSIBLE);
+					Caller->PushActionMove(ACTION_NEWLIST, DoorFront, true);
+					Caller->PushActionTurnTo(ACTION_APPEND, DoorBack);
+					Caller->PushActionSwitchAnim(ACTION_APPEND, "usesaw");
+					Caller->PushActionWait(ACTION_APPEND,6);
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "TuerOeffnen",Target,1,false);
+					Caller->PushActionSwitchAnim(ACTION_APPEND, "idle");
+					targetHouse.OpenDoor(targetHouse.GetEntranceDoorID());
+					Caller->PushActionEnterHouse(ACTION_APPEND, Target);
+				}
+				else
+                		{
+		                	targetHouse.SetFlag(OF_ACCESSIBLE);
+                		}
+			break;
+
+			case 1:
+				Audio::PlaySample("mod:Audio/FX/voices/hints/tuer.wav");
+			break;
+		}
+
+	}
+};

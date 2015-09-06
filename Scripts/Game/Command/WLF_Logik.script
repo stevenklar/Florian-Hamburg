@@ -1,0 +1,312 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* WLF_LOGIK.SCRIPT - Auf- und Ablade-Script für Wechsellader-Fahrzeuge         */
+/*                                                                              */
+/* Dieses Commandscript gibt dem Wechsellader-Fahrzeug die Möglichkeit, 	*/
+/* einzelne Abrollbehälter auf- oder abzuladen.					*/
+/*                                                                              */
+/* Original-Script: BevRem, Godra	                                        */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt.           */
+/* 13.07.2008, SM,   WLF-Auflade und -Ablade-Scripts zusammengeführt.           */
+/*                                                                              */
+/* **************************************************************************** */
+
+
+// AUFLADEN
+
+object wlfloadup_f12 : CommandScript
+{
+	wlfloadup_f12()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("wlfupload_f12");
+		SetCursor("wlfupload_f12");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Vehicle v(Target);
+                if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_wlf_container_asgw.e4p") == 0)
+                {
+                        if(v.GetFreeTransports()==2)
+                                return true;
+                }
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+                Vehicle v(Caller);
+                Vehicle c(Target);
+                v.PushActionMove(ACTION_NEWLIST, Target, TARGET_LOADUP);
+                if(StrCompare(c.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_wlf_container_asgw.e4p") == 0)
+                {
+                        v.PushActionExecuteCommand(ACTION_APPEND, "DummyWLF", Target, 12, false);
+                }
+        }
+
+};
+
+object wlfloadup_f32 : CommandScript
+{
+	wlfloadup_f32()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("wlfupload_f32");
+		SetCursor("wlfupload_f32");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			return false;
+
+		Vehicle v(Target);
+                if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_container_dekon.e4p") == 0)
+                {
+                        if(v.GetFreeTransports()==2)
+                                return true;
+                }
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+                Vehicle v(Caller);
+                Vehicle c(Target);
+                v.PushActionMove(ACTION_NEWLIST, Target, TARGET_LOADUP);
+                if(StrCompare(c.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_container_dekon.e4p") == 0)
+                {
+                        v.PushActionExecuteCommand(ACTION_APPEND, "DummyWLF", Target, 32, false);
+                }
+        }
+
+};
+
+object DummyWLF : CommandScript
+{
+	DummyWLF()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		Vehicle c(Target);
+		float r1, r2, r3, r4, r5, r6, r7, r8, r9;
+		Vector pos = v.GetPosition();
+		v.GetRotation(r1, r2, r3, r4, r5, r6, r7, r8, r9);
+		PersonList pl = v.GetPassengers();
+		v.PushActionDeleteOwner(ACTION_NEWLIST);
+		c.PushActionDeleteOwner(ACTION_NEWLIST);
+
+		Vehicle WLF;
+
+		switch(childID)
+		{
+			case 12:
+				WLF = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_WLF_asgw.e4p", "f12_wlf_asgw");
+			break;
+
+			case 32:
+	                 	WLF = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_dekon.e4p", "f32_wlf_dekon");
+			break;
+		}
+
+		if (Game::IsMultiplayer())
+			WLF.SetPlayerMP(1);
+	
+		WLF.SetSpeed(8.0f);
+	        WLF.SetPosition(pos);
+	        WLF.SetRotation(r1, r2, r3, r4, r5, r6, r7, r8, r9);
+	        WLF.SetMaxPassengers(2);
+
+	        PersonList passengers = v.GetPassengers();
+		for(int i = 0; i < passengers.GetNumPersons(); i++)
+		{
+			v.RemovePassenger(&passengers.GetPerson(i));
+			WLF.AddPassenger(&passengers.GetPerson(i));
+		}
+
+		PersonList transports = v.GetTransports();
+		for(int i = 0; i < transports.GetNumPersons(); i++)
+		{
+			v.RemoveTransport(&transports.GetPerson(i));
+			WLF.AddTransport(&transports.GetPerson(i));
+		}
+	}
+};
+
+
+
+
+// ABLADEN
+
+object wlfunload_f12 : CommandScript
+{
+	wlfunload_12()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("wlfunload_f12");
+		SetCursor("wlfunload_f12");
+		SetDoubleClickable(true);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+                return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		float r[9];
+		Vector pos = v.GetPosition();
+		Vector wlfpos = v.GetPosition();
+		v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+		Vector offset(-294.f, 0.f, 0.f);
+		Math::RotateVector(offset.x, offset.y, offset.z, r);
+		pos.x += offset.x;
+		pos.y += offset.y;
+		if (Game::FindFreePosition(Caller, pos, 0.f))
+		{
+			Vehicle WLF;
+			WLF = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_WLF.e4p", "f12_wlf_leer");
+			if (Game::IsMultiplayer())
+			{
+				WLF.SetPlayerMP(1);
+			}
+			WLF.SetPosition(wlfpos);
+			WLF.SetSpeed(8.0f);
+			WLF.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+			PersonList pl = v.GetPassengers();
+			Vehicle AB;
+			if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_WLF_asgw.e4p") == 0)
+			{
+				AB = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_wlf_container_asgw.e4p", "f12_wlf_asgw");
+                                 if (Game::IsMultiplayer())
+				{
+					AB.SetPlayerMP(1);
+				}
+                                 AB.SetMaxTransports(2);
+                        }
+			v.PushActionDeleteOwner(ACTION_NEWLIST);
+                        AB.SetPosition(pos);
+                        AB.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                        AB.UpdatePlacement();
+
+		PersonList passengers = v.GetPassengers();
+    		for(int i = 0; i < passengers.GetNumPersons(); i++)
+    		{
+    			v.RemovePassenger(&passengers.GetPerson(i));
+    			WLF.AddPassenger(&passengers.GetPerson(i));
+    		}
+
+    		PersonList transports = v.GetTransports();
+    		for(int i = 0; i < transports.GetNumPersons(); i++)
+    		{
+    			v.RemoveTransport(&transports.GetPerson(i));
+    			WLF.AddTransport(&transports.GetPerson(i));
+    		}
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+                        WLF.Select();
+                }
+	}
+};
+
+
+
+object wlfunload_f32 : CommandScript
+{
+
+	wlfunload_32()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("wlfunload_f32");
+		SetCursor("wlfunload_f32");
+		SetDoubleClickable(true);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+                return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+                Vehicle v(Caller);
+                float r[9];
+                Vector pos = v.GetPosition();
+                Vector wlfpos = v.GetPosition();
+                v.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                Vector offset(-294.f, 0.f, 0.f);
+		Math::RotateVector(offset.x, offset.y, offset.z, r);
+		pos.x += offset.x;
+		pos.y += offset.y;
+		if (Game::FindFreePosition(Caller, pos, 0.f))
+		{
+                        Vehicle WLF;
+                        WLF = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf.e4p", "f32_wlf_leer");
+
+			if (Game::IsMultiplayer())
+			{
+				WLF.SetPlayerMP(1);
+			}
+
+                        WLF.SetPosition(wlfpos);
+			WLF.SetSpeed(8.0f);
+                        WLF.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                        PersonList pl = v.GetPassengers();
+                        Vehicle AB;
+                        if(StrCompare(v.GetPrototypeFileName(), "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_dekon.e4p") == 0)
+                        {
+                                AB = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_container_dekon.e4p", "f32_wlf_dekon");
+
+				if (Game::IsMultiplayer())
+				{
+					AB.SetPlayerMP(1);
+				}
+
+                                 AB.SetMaxTransports(2);
+                        }
+			v.PushActionDeleteOwner(ACTION_NEWLIST);
+                        AB.SetPosition(pos);
+                        AB.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+                        AB.UpdatePlacement();
+
+		PersonList passengers = v.GetPassengers();
+    		for(int i = 0; i < passengers.GetNumPersons(); i++)
+    		{
+    			v.RemovePassenger(&passengers.GetPerson(i));
+    			WLF.AddPassenger(&passengers.GetPerson(i));
+    		}
+
+    		PersonList transports = v.GetTransports();
+    		for(int i = 0; i < transports.GetNumPersons(); i++)
+    		{
+    			v.RemoveTransport(&transports.GetPerson(i));
+    			WLF.AddTransport(&transports.GetPerson(i));
+    		}
+			Caller->PushActionDeleteOwner(ACTION_APPEND);
+                        WLF.Select();
+                }
+	}
+};

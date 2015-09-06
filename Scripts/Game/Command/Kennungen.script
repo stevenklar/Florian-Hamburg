@@ -1,0 +1,1706 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* KENNUNGEN.SCRIPT - Kennungen für Fahrzeuge/Gerät und Personen                */
+/*                                                                              */
+/* Dieses Commandscript dient zur Identifizierung der einzelnen Fahrzeuge,      */
+/* Geräte und Eigenschaften 							*/
+/*                                                                              */
+/* Original-Script: Witchdoc		                                        */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 14.07.2008, SM,   RTH Christoph 29 hinzugefügt                               */
+/* 04.08.2008, SM,   Ölspur und RTH-Landepunkt hinzugefügt                      */
+/* 08.10.2008, SM,   Vattenfall-Fahrzeug hinzugefügt                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+// FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+
+object f12_klf : CommandScript
+{
+	f12_klf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_hlf1 : CommandScript
+{
+	f12_hlf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_hlf2 : CommandScript
+{
+	f12_hlf2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_tmf : CommandScript
+{
+	f12_tmf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_rtwa : CommandScript
+{
+	f12_rtwa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_rtwb : CommandScript
+{
+	f12_rtwb()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_rtwc : CommandScript
+{
+	f12_rtwc()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_bdienst : CommandScript
+{
+	f12_bdienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_wlf_leer : CommandScript
+{
+	f12_wlf_leer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_container_asgw : CommandScript
+{
+	f12_container_asgw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_wlf_asgw : CommandScript
+{
+	f12_wlf_asgw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_gwh : CommandScript
+{
+	f12_gwh()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_rw : CommandScript
+{
+	f12_rw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f12_grtw : CommandScript
+{
+	f12_grtw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+// FEUER- UND RETTUNGSWACHE BERLINER TOR (F-22)
+
+object f22_klf : CommandScript
+{
+	f22_klf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_hlf1 : CommandScript
+{
+	f22_hlf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_tmf : CommandScript
+{
+	f22_tmf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_rtwa : CommandScript
+{
+	f22_rtwa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_rtwb : CommandScript
+{
+	f22_rtwb()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_rtwc : CommandScript
+{
+	f22_rtwc()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_gw : CommandScript
+{
+	f22_gw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_adienst : CommandScript
+{
+	f22_adienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_bfw : CommandScript
+{
+	f22_bfw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+// FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+
+object f23_klf : CommandScript
+{
+	f23_klf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_hlf1 : CommandScript
+{
+	f23_hlf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_hlf2 : CommandScript
+{
+	f23_hlf2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_dlk : CommandScript
+{
+	f23_dlk()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_rtwa : CommandScript
+{
+	f23_rtwa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_rtwb : CommandScript
+{
+	f23_rtwb()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_rtwc : CommandScript
+{
+	f23_rtwc()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f23_bdienst : CommandScript
+{
+	f23_bdienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+// FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+
+object f33_klf : CommandScript
+{
+	f33_klf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f33_hlf1 : CommandScript
+{
+	f33_hlf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f33_tmf : CommandScript
+{
+	f33_tmf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f33_rtwa : CommandScript
+{
+	f33_rtwa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f33_rtwk : CommandScript
+{
+	f33_rtwk()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f33_gwrd : CommandScript
+{
+	f33_gwrd()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+// FREIWILLIGE FEUERWEHR ROTHENBURGSORT/VEDDEL (F-3917)
+
+object f3917_hlf1 : CommandScript
+{
+	f3917_hlf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f3917_hlf2 : CommandScript
+{
+	f3917_hlf2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+// FEUER- UND RETTUNGSWACHE BILLSTEDT (F-25) (AUSSERHALB)
+
+object f25_segt : CommandScript
+{
+	f25_segt()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+// TECHNIK- UND UMWELTWACHE (F-32) (AUSSERHALB)
+
+object f32_udienst : CommandScript
+{
+	f32_udienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f32_kmrd : CommandScript
+{
+	f32_kmrd()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f32_wlf_leer : CommandScript
+{
+	f32_wlf_leer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f32_wlf_container_dekon : CommandScript
+{
+	f32_wlf_container_dekon()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f32_wlf_dekon : CommandScript
+{
+	f32_wlf_dekon()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f32_kran : CommandScript
+{
+	f32_kran()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+// NOTARZTEINSATZFAHRZEUGE F-22 (KRANKENHAUS) UND F-14 (AUSSERHALB) SOWIE DES BUNDESWEHR-KRANKENHAUSES (AUSSERHALB)
+
+object f14_nef : CommandScript
+{
+	f14_nef()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object f22_nef : CommandScript
+{
+	f22_nef()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object bwk_nef : CommandScript
+{
+	bwk_nef()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+// POLIZEIWACHE NORD
+
+object pol_nord_stw1 : CommandScript
+{
+	pol_nord_stw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_stw2 : CommandScript
+{
+	pol_nord_stw2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_stw3 : CommandScript
+{
+	pol_nord_stw3()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_stw4 : CommandScript
+{
+	pol_nord_stw4()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_mtw1 : CommandScript
+{
+	pol_nord_mtw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_kripo1 : CommandScript
+{
+	pol_nord_kripo1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_nord_kripo2 : CommandScript
+{
+	pol_nord_kripo2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+// POLIZEIWACHE SUED
+
+object pol_sued_stw1 : CommandScript
+{
+	pol_sued_stw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_sued_stw2 : CommandScript
+{
+	pol_sued_stw2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pol_sued_stw3 : CommandScript
+{
+	pol_sued_stw3()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+// THW (AUSSERHALB)
+
+object thw_elw1 : CommandScript
+{
+	thw_elw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object thw_mlw1 : CommandScript
+{
+	thw_mlw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object thw_unimog1 : CommandScript
+{
+	thw_unimog1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+
+
+// SONSTIGE (ENTSTOERDIENST WASSER, ABSCHLEPPFAHRZEUGE, BESTATTER ETC.)
+
+
+object entstoerdienst : CommandScript
+{
+	entstoerdienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object asf1 : CommandScript
+{
+	asf1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object asf2 : CommandScript
+{
+	asf2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object feuerwehr_asf : CommandScript
+{
+	feuerwehr_asf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+
+
+// ASB
+
+
+object asb_naw : CommandScript
+{
+	asb_naw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object asb_rtw1 : CommandScript
+{
+	asb_rtw1()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object asb_rtw2 : CommandScript
+{
+	asb_rtw2()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object asb_rtw3 : CommandScript
+{
+	asb_rtw3()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object rth_chr29 : CommandScript
+{
+	rth_chr29()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object vattenfall : CommandScript
+{
+	vattenfall()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+// SONSTIGE STATUS- UND ABFRAGEKENNUNGEN (WERDEN INTERN VERWENDET)
+
+object ich_bin_frei : CommandScript
+{
+	ich_bin_frei()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_nicht_frei : CommandScript
+{
+	ich_bin_nicht_frei()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object loeschzug_f12_teilnehmer : CommandScript
+{
+	loeschzug_f12_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object loeschzug_f22_teilnehmer : CommandScript
+{
+	loeschzug_f22_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object loeschzug_f23_teilnehmer : CommandScript
+{
+	loeschzug_f23_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object loeschzug_f33_teilnehmer : CommandScript
+{
+	loeschzug_f33_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object loeschzug_f3917_teilnehmer : CommandScript
+{
+	loeschzug_f3917_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object thw_zug_teilnehmer : CommandScript
+{
+	thw_zug_teilnehmer()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ff : CommandScript
+{
+	ich_bin_ff()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_adienst : CommandScript
+{
+	ich_bin_ein_adienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_bdienst : CommandScript
+{
+	ich_bin_ein_bdienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_bfw : CommandScript
+{
+	ich_bin_ein_bfw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_grtw : CommandScript
+{
+	ich_bin_ein_grtw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_asf : CommandScript
+{
+	ich_bin_ein_asf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_notarzt : CommandScript
+{
+	ich_bin_ein_notarzt()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_ra : CommandScript
+{
+	ich_bin_ein_ra()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_einsatzleiter : CommandScript
+{
+	ich_bin_ein_einsatzleiter()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_fuehrungsdienst : CommandScript
+{
+	ich_bin_ein_fuehrungsdienst()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object ich_bin_ein_atemschutztraeger : CommandScript
+{
+	ich_bin_ein_atemschutztraeger()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_csa_traeger : CommandScript
+{
+	ich_bin_ein_csa_traeger()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_nef : CommandScript
+{
+	ich_bin_ein_nef()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_rtw : CommandScript
+{
+	ich_bin_ein_rtw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+
+object ich_fuehre_wasser : CommandScript
+{
+	ich_fuehre_wasser()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_wasser_retter : CommandScript
+{
+	ich_bin_ein_wasser_retter()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_hubretter : CommandScript
+{
+	ich_bin_ein_hubretter()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_hoehenretter : CommandScript
+{
+	ich_bin_ein_hoehenretter()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_rth : CommandScript
+{
+	ich_bin_ein_rth()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+object ich_bin_ein_stw : CommandScript
+{
+	ich_bin_ein_stw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_ein_mtw : CommandScript
+{
+	ich_bin_ein_mtw()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_kripo : CommandScript
+{
+	ich_bin_kripo()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_pa : CommandScript
+{
+	ich_fuehre_pa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_csa : CommandScript
+{
+	ich_fuehre_csa()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_fuehre_tauchgeraet : CommandScript
+{
+	ich_fuehre_tauchgeraet()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ich_bin_kein_fz : CommandScript
+{
+	ich_bin_kein_fz()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object schnellangriff_aktiviert : CommandScript
+{
+	schnellangriff_aktiviert()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object kmrd_target : CommandScript
+{
+	kmrd_target()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object Funkfrei : CommandScript
+{
+	Funkfrei()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("funkfrei");
+		SetCursor("funkfrei");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()!=Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/FUNKFREI.wav");
+		Mission::PlayHint("Status 1 -> Frei auf Funk");
+	}
+};
+
+object verteiler_an_bord : CommandScript
+{
+	verteiler_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object monitor_an_bord : CommandScript
+{
+	monitor_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object ts_an_bord : CommandScript
+{
+	ts_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object pylone_an_bord : CommandScript
+{
+	pylone_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object lima_an_bord : CommandScript
+{
+	lima_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object schnellangriff_an_bord : CommandScript
+{
+	schnellangriff_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object luefter_an_bord : CommandScript
+{
+	luefter_an_bord()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object Hochwasser_Punkt : CommandScript
+{
+	Hochwasser_Punkt()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object oelspur_target : CommandScript
+{
+	oelspur_target()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object hrettung_target : CommandScript
+{
+	hrettung_target()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object hier_landen : CommandScript
+{
+	hier_landen()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};

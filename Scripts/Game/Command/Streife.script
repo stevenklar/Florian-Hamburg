@@ -1,0 +1,101 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* STREIFE.SCRIPT - Streife-Script für Polizeifahrzeuge.		        */
+/*                                                                              */
+/* Dieses Commandscript lässt Polizeifahrzeuge auf einem fest definierten Pfad  */
+/* automatisch Streife fahren.                                                  */
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications	 				*/
+/*                                                                              */
+/* 03.01.2008, SM,   Initial-Version                                            */
+/* 25.11.2008, SM,   Bug behoben, dass Fahrzeuge nicht verfügbar waren.		*/
+/*                                                                              */
+/* **************************************************************************** */
+
+const char PATH_STREIFE_01[] = "streife1";
+const char PATH_STREIFE_02[] = "streife2";
+const char PATH_STREIFE_03[] = "streife3";
+
+object StreifeFahren : CommandScript
+{
+	StreifeFahren()
+	{
+		SetIcon("streife");
+ 		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (Game::IsFreeplay() || Game::IsMultiplayer())
+			return true;
+		if (!Caller->IsValid())
+			return false;
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || (Caller->GetID() != Target->GetID()))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+	
+		PersonList pol = v.GetPassengers();
+		if (!pol.GetNumPersons() >= 1)
+		{
+			return;
+		}
+		
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+		if (v.HasCommand("DUMMYHasSiren"))
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		}
+
+		v.EnableBlueLights(false);
+
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+
+		v.SetSpeed(6.0f);
+		int random = rand()%2;
+
+		switch(random)
+		{
+			case 0:
+				v.SetObjectPath(PATH_STREIFE_01, 6.4f, true);
+				break;
+			case 1:
+				v.SetObjectPath(PATH_STREIFE_02, 6.4f, true);
+				break;
+			case 2:
+				v.SetObjectPath(PATH_STREIFE_03, 6.4f, true);
+				break;
+		}
+
+		Path path = v.GetObjectPath();
+		int index = path.GetNearestPointIndex(v.GetPosition());
+		Vector target = path.GetPoint(index + 1);
+		v.EnableHeadLights(true);
+		v.PushActionLightOn(ACTION_NEWLIST, true);
+		v.PushActionMove(ACTION_APPEND, target, false);
+		v.PushActionUsePath(ACTION_APPEND, &path, true, 6.5f);
+	}
+};

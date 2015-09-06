@@ -1,0 +1,610 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* TMF_LOGIK.SCRIPT - Logik-Script für die Hubrettungsfahrzeuge TMF und DLK	*/
+/*										*/
+/*										*/
+/* Beinhaltet folgende Commands:						*/
+/* 										*/
+/* VCmdInstall_TMF	- Script zum Aufbauen und Animieren des Hubrettungs-	*/
+/*			  fahrzeugs. Steuerung über Child-ID.			*/
+/*                                                                              */
+/* VCmdDeinstall_TMF	- Script zum Abbauen und Animieren des Hubrettungs-	*/
+/*			  fahrzeugs. Steuerung über Child-ID			*/
+/*                                                                              */
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications					*/
+/*                                                                              */
+/* Verwendung in anderen Modifikationen nur nach vorheriger Absprache erlaubt!	*/
+/*                                                                              */
+/* HISTORY:									*/
+/* --------									*/
+/* 19.12.2007, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object VCmdInstall_TMF: CommandScript
+{
+
+	Vector TargetPos;
+
+	VCmdInstall_TMF()
+	{
+		SetIcon("Install");
+		SetCursor("Install");
+		SetValidTargets(ACTOR_VEHICLE|ACTOR_OPEN_HOUSE);
+		SetGroupID(CGROUP_INSTALL);
+		SetGroupLeader(true);
+		SetPriority(30);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+		return !v.IsInstalled();
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		Vehicle v(Caller);
+
+		if (!Target->IsValid() || v.IsUplifting())
+			return false;
+		if(Target->GetType() == ACTOR_OPEN_HOUSE)
+		{
+			OpenHouse targetHouse(Target);
+			if (!targetHouse.IsValid() || targetHouse.HasGroundEntrance() || !targetHouse.IsFlagSet(OF_ACCESSIBLE) || v.GetInstallTargetID() == Target->GetID())
+			        return false;
+			return true;
+		}
+		if(Caller->GetID() == Target->GetID() && !v.IsInstalled() && !v. IsUplifted())
+		{
+			return true;
+		}			
+		return false;			
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle OldVehicle(Caller);
+		switch(childID)
+		{
+			case 0:
+				OldVehicle.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+				OldVehicle.DisableAllCommands();
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+
+				if (Target->GetType() == ACTOR_OPEN_HOUSE)
+				{
+					TargetPos = Target->GetTargetPoint(Caller, TARGET_ENTRY_WINDOW_PARKING);
+					Caller->PushActionMove(ACTION_APPEND, TargetPos);
+				}
+
+				if (Caller->HasName("f23_dlk"))
+				{
+					OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdInstall_TMF", Target, 1, false);
+				}
+
+				if (Caller->HasName("f12_tmf"))
+				{
+					OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdInstall_TMF", Target, 12, false);
+				}
+
+				if (Caller->HasName("f22_tmf"))
+				{
+					OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdInstall_TMF", Target, 22, false);
+				}
+
+				if (Caller->HasName("f33_tmf"))
+				{
+					OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdInstall_TMF", Target, 33, false);
+				}
+			break;
+
+			// SONDERAUFRUF FÜR DLK MIT KORBANIMATION F-23
+			case 1:
+				OldVehicle.PushActionWait(ACTION_APPEND, 2.6f);
+				OldVehicle.PlayAnimOpenDoor(DAT_SPECIAL, 2.5f, Caller);
+				OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdInstall_TMF", Target, 23, false);
+			break;
+
+
+
+			// TMF FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+			case 12:	
+				OldVehicle.SetChildEnabled("stuetzen", true);
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_tmfb.e4p", "f12_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				NewVehicle.EnableBlueLights(false);
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+	        		NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+                		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+
+				if (Target->GetType() == ACTOR_OPEN_HOUSE)
+				{
+					TargetPos = Target->GetTargetPoint(&NewVehicle, TARGET_ENTRY_WINDOW_PARKING);
+					NewVehicle.PushActionMove(ACTION_APPEND, TargetPos);
+				}
+
+				NewVehicle.PushActionShowHide(ACTION_APPEND, false);
+				NewVehicle.PushActionInstall(ACTION_APPEND, Target);
+				NewVehicle.SetChildEnabled("stuetzen", true);
+				NewVehicle.RemoveCommand("MoveTo");
+			break;
+
+
+			// TMF FEUER- UND RETTUNGSWACHE BERLINER TOT (F-22)
+			case 22:	
+				OldVehicle.SetChildEnabled("stuetzen", true);
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_tmfb.e4p", "f22_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				NewVehicle.EnableBlueLights(false);
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+	        		NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+                		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+
+				if (Target->GetType() == ACTOR_OPEN_HOUSE)
+				{
+					TargetPos = Target->GetTargetPoint(&NewVehicle, TARGET_ENTRY_WINDOW_PARKING);
+					NewVehicle.PushActionMove(ACTION_APPEND, TargetPos);
+				}
+
+				NewVehicle.PushActionShowHide(ACTION_APPEND, false);
+				NewVehicle.PushActionInstall(ACTION_APPEND, Target);
+				NewVehicle.SetChildEnabled("stuetzen", true);
+				NewVehicle.RemoveCommand("MoveTo");
+			break;
+
+
+			// DLK FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+			case 23:
+				OldVehicle.SetChildEnabled("stuetzen", true);
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/F23_DLKB.e4p", "f23_dlk");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				NewVehicle.EnableBlueLights(false);
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+	        		NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+                		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+
+				if (Target->GetType() == ACTOR_OPEN_HOUSE)
+				{
+					TargetPos = Target->GetTargetPoint(&NewVehicle, TARGET_ENTRY_WINDOW_PARKING);
+					NewVehicle.PushActionMove(ACTION_APPEND, TargetPos);
+				}
+
+				NewVehicle.PushActionShowHide(ACTION_APPEND, false);
+				NewVehicle.PushActionInstall(ACTION_APPEND, Target);
+				NewVehicle.SetChildEnabled("stuetzen", true);
+				NewVehicle.RemoveCommand("MoveTo");
+			break;
+
+
+			// TMF FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+			case 33:	
+				OldVehicle.SetChildEnabled("stuetzen", true);
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_tmfb.e4p", "f33_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				NewVehicle.EnableBlueLights(false);
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+	        		NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+                		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+
+				if (Target->GetType() == ACTOR_OPEN_HOUSE)
+				{
+					TargetPos = Target->GetTargetPoint(&NewVehicle, TARGET_ENTRY_WINDOW_PARKING);
+					NewVehicle.PushActionMove(ACTION_APPEND, TargetPos);
+				}
+
+				NewVehicle.PushActionShowHide(ACTION_APPEND, false);
+				NewVehicle.PushActionInstall(ACTION_APPEND, Target);
+				NewVehicle.SetChildEnabled("stuetzen", true);
+				NewVehicle.RemoveCommand("MoveTo");
+			break;
+		}
+	}
+};
+
+object VCmdDeinstall_TMF: CommandScript
+{
+	VCmdDeinstall_TMF()
+	{
+		SetIcon("Deinstall");
+		SetCursor("Deinstall");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetGroupID(CGROUP_INSTALL);
+		SetGroupLeader(true);
+		SetPriority(30);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		Vehicle OldVehicle(Caller);
+		if (OldVehicle.IsInstalled())
+		{
+			if (OldVehicle.GetVehicleType() == VT_FIREFIGHTERS_DLK && OldVehicle.IsUplifting())
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle OldVehicle(Caller);
+		switch(childID)
+		{
+			case 0:
+				OldVehicle.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+				if (!OldVehicle.IsInstalled())
+				{
+					if (Caller->HasName("f12_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 12, false);
+					}
+					if (Caller->HasName("f22_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 22, false);
+					}
+					if (Caller->HasName("f23_dlk"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 23, false);
+					}
+					if (Caller->HasName("f33_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 33, false);
+					}
+				}
+				else
+				{
+					if (OldVehicle.GetVehicleType() == VT_FIREFIGHTERS_DLK && OldVehicle.IsUplifted())
+					{
+						OldVehicle.PushActionBasketDown(ACTION_APPEND, Vector(0.f, 0.f, 0.f));
+						OldVehicle.PushActionDeinstall(ACTION_APPEND);
+					}
+					else
+					{
+						OldVehicle.PushActionDeinstall(ACTION_APPEND);
+					}
+					if (Caller->HasName("f12_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 12, false);
+					}
+					if (Caller->HasName("f22_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 22, false);
+					}
+					if (Caller->HasName("f23_dlk"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 23, false);
+					}
+					if (Caller->HasName("f33_tmf"))
+					{	
+						OldVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdDeinstall_TMF", Caller, 33, false);
+					}
+				}
+			break;
+
+
+
+
+			// TMF FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+			case 12:
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_tmf.e4p", "f12_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				NewVehicle.SetAnimation("Stuetzen_sind_aus");
+				NewVehicle.SetAnimation("Mast_ist_aus");
+			        NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+        	       		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				NewVehicle.Show();
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+				NewVehicle.PushActionWait(ACTION_NEWLIST, 0.1f);
+			break;
+
+
+			// TMF FEUER- UND RETTUNGSWACHE BERLINER TOR (F-22)
+			case 22:
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_tmf.e4p", "f22_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				NewVehicle.SetAnimation("Stuetzen_sind_aus");
+				NewVehicle.SetAnimation("Mast_ist_aus");
+			        NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+        	       		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				NewVehicle.Show();
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+				NewVehicle.PushActionWait(ACTION_NEWLIST, 0.1f);
+			break;
+
+
+			// DLK FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+			case 23:
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/F23_DLK.e4p", "f23_dlk");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				NewVehicle.PlayAnimOpenDoor(DAT_SPECIAL, 0.0f, Caller);
+			        NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+                		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				NewVehicle.PushActionWait(ACTION_NEWLIST, 2.6f);
+				NewVehicle.PlayAnimCloseDoor(DAT_SPECIAL, 2.5f, Caller);
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				OldVehicle.PushActionWait(ACTION_APPEND, 0.1f);
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+			break;
+
+
+			// TMF FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+			case 33:
+				Vector pos = OldVehicle.GetPosition();
+				float rot[9];
+				OldVehicle.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				Vehicle NewVehicle = Game::CreateVehicle("mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_tmf.e4p", "f33_tmf");
+				NewVehicle.SetUserData(OldVehicle.GetUserData());
+				NewVehicle.PushActionExecuteCommand(ACTION_APPEND, "VCmdWarningLights", Caller, 1, false);
+				NewVehicle.Hide();
+				if (Game::IsMultiplayer())
+				{
+					NewVehicle.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				if (OldVehicle.IsBlueLightEnabled())
+				{
+					NewVehicle.EnableBlueLights(true);
+				}
+				else
+				{
+					NewVehicle.EnableBlueLights(false);
+				}
+				NewVehicle.SetAnimation("Stuetzen_sind_aus");
+				NewVehicle.SetAnimation("Mast_ist_aus");
+			        NewVehicle.SetPosition(pos);
+				NewVehicle.SetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+        	       		NewVehicle.UpdatePlacement();
+				NewVehicle.SetSpeed(8.0f);
+				PersonList passengers = OldVehicle.GetPassengers();
+				for(int i = 0; i < passengers.GetNumPersons(); i++)
+				{
+					OldVehicle.RemovePassenger(&passengers.GetPerson(i));
+					NewVehicle.AddPassenger(&passengers.GetPerson(i));
+				}
+				if (OldVehicle.IsSelected())
+				{
+					OldVehicle.Deselect();
+					NewVehicle.Select();
+				}
+				NewVehicle.Show();
+				OldVehicle.PushActionDeleteOwner(ACTION_APPEND);
+				NewVehicle.PushActionWait(ACTION_NEWLIST, 0.1f);
+			break;
+		}
+	}
+};

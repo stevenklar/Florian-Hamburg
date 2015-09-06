@@ -1,0 +1,104 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* PUTINCAR.SCRIPT - Script um Objekte in Fahrzeuge einzuladen.                 */
+/*                                                                              */
+/* Dieses Commandscript regelt das Einladen von Objekten bzw. Personen in       */
+/* Fahrzeugen. 									*/ 
+/*                                                                              */
+/* Original-Script: Witchdoc				                        */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object PutInCar : CommandScript
+{
+	TargetPoint targetPoint;
+	
+	
+	PutInCar()
+	{
+		SetIcon("putintocar");
+		SetCursor("putintocar");
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+	
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return p.IsLinkedWithPerson() || p.IsCarryingPerson();
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetType()!=ACTOR_VEHICLE || Caller->GetType()!=ACTOR_PERSON)
+			return false;
+		
+		Vehicle v(Target);		
+		if (v.GetVehicleType()==VT_NOSQUAD || v.GetFreeTransports() < 1)
+			return false;
+		if(!v.IsDestroyed())
+		{
+			Person p(Caller);
+			if (p.GetEnteredCarID() != -1 || p.IsContaminated())
+				return false;
+			targetPoint = TARGET_REARDOOR;
+			if (p.IsLinkedWithPerson())
+			{
+				Person linked = p.GetArrested();
+				if (linked.IsValid() && linked.IsContaminated())
+				   	return false;
+			}
+
+			bool ITW = p.IsCarryingPerson() && v.GetVehicleType() == VT_AMBULANCE_ITW;
+			bool STW = p.IsLinkedWithPerson() && v.GetVehicleType() == VT_POLICE_STW && (p.HasCommand("UseRoadBlock") || p.HasCommand("Aim"));
+			bool MTW = p.IsLinkedWithPerson() && v.GetVehicleType() == VT_POLICE_MTW && (p.HasCommand("UseRoadBlock") || p.HasCommand("Aim"));
+			bool SW = p.IsLinkedWithPerson() && v.GetVehicleType() == VT_POLICE_SW && (p.HasCommand("UseRoadBlock") || p.HasCommand("Aim"));
+			bool GTW = p.IsLinkedWithPerson() && v.GetVehicleType() == VT_POLICE_GTW && (p.HasCommand("UseRoadBlock") || p.HasCommand("Aim"));
+			bool PHC = p.IsLinkedWithPerson() && v.GetVehicleType() == VT_POLICE_PHC && v.IsOnGround() && (p.HasCommand("UseRoadBlock") || p.HasCommand("Aim"));
+			bool TransEvac = v.GetVehicleType() == VT_AMBULANCE_TRANSEVAC && (p.IsCarryingPerson() || p.IsLinkedWithPerson());
+			
+			if(!ITW && !STW && !PHC && !MTW && !SW && !GTW && !TransEvac)
+				return false;
+
+			if (SW || ITW || TransEvac || MTW)
+		       targetPoint = TARGET_PASSENGERDOOR;			
+			
+			// sonstige prüfungen (heli gelandet, boot angelegt, etc.)
+			return true;
+		}
+
+		return false;
+	}
+	
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		Vehicle v(Target);
+
+		if (p.IsCarryingPerson())
+		{
+			Person carried = p.GetCarried();
+			bool carriedClassified = false;
+			if (carried.IsClassified())
+				carriedClassified = true;
+			if(!carriedClassified && (v.GetVehicleType() == VT_AMBULANCE_ITW || v.GetVehicleType() == VT_AMBULANCE_RTW || v.GetVehicleType() == VT_AMBULANCE_RHC))
+			{
+				ScriptInterface::ShowMessageTickerTextForSinglePlayer(Caller, "ALLM_CLASSIFY_FIRST");
+				Audio::PlaySample("mod:Audio/FX/Voices/Hints/ALLM_CLASSIFY_FIRST.wav");
+				return;
+			}
+		}
+
+		Vector TargetPos = Target->GetTargetPoint(Caller, targetPoint);
+		// fahrzeug muss verfolgt werden wenn es sich bewegt
+		Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionPutInCar(ACTION_APPEND, Target);
+	}
+};

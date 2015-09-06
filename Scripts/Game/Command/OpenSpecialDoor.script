@@ -1,0 +1,128 @@
+object VCmdOpenSpecialDoor : CommandScript
+{ 
+	VCmdOpenSpecialDoor()
+	{
+		SetIcon("OpenSpecialDoor");
+		SetCursor("OpenSpecialDoor");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPossibleCallers(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetGroupID(140);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		if (v.HasCommand("DummyHasOpenSpecialDoors"))
+			return false;
+			
+		return true;	
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		if (v.IsValid() && !v.HasCommand("DummyHasOpenSpecialDoors"))
+			return true;
+		
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		Vehicle vt(Target);
+		if (v.GetID() == vt.GetID())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.AssignCommand("DummyHasOpenSpecialDoors");
+		v.PlayAnimOpenDoor(DAT_SPECIAL, 0.6f, Caller);
+		v.EnableSpecialLights(true);
+	}
+};
+
+object VCmdCloseSpecialDoor : CommandScript
+{ 
+	VCmdCloseSpecialDoor()
+	{
+		SetIcon("OpenSpecialDoor");
+		SetCursor("OpenSpecialDoor");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPossibleCallers(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetGroupID(140);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		if (v.HasCommand("DummyHasOpenSpecialDoors"))
+			return true;
+			
+		return false;	
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Vehicle v(Caller);
+		if (v.IsValid() && v.HasCommand("DummyHasOpenSpecialDoors"))
+			return true;
+		
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		Vehicle vt(Target);
+		if (v.GetID() == vt.GetID())
+		{
+			if (v.HasCommand("DummyHasOpenSpecialDoors"))
+				return true;
+		}
+	
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.RemoveCommand("DummyHasOpenSpecialDoors");
+		v.PlayAnimCloseDoor(DAT_SPECIAL, 0.6f, Caller);
+		v.EnableSpecialLights(false);
+	}
+};
+
+object DummyHasOpenSpecialDoors : CommandScript
+{
+ 	DummyHasOpenSpecialDoors()
+ 	{
+ 		SetGroupID(20);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+};

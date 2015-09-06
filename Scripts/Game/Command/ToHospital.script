@@ -1,0 +1,863 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* TOHOSPITAL.SCRIPT - Script zum Schicken eines RTW zum Krankenhaus.      	*/
+/*                                                                              */
+/* Dieses Commandscript schickt einen RTW zur Notaufnahme des Krankenhauses.    */
+/* Dort wird der Patient abgegeben und ggf. ein neuer Notarzt erzeugt.          */
+/*                                                                              */
+/* Original-Script: Witchdoc	                                                */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 13.11.2007, SM,   Initial-Version                                            */
+/* 04.12.2007, SM,   Unterscheidung zwischen RTW, NAW und Bestattungswagen im   */
+/*                   ActionEmptyRTW Command hinzugefügt.                        */
+/* 05.12.2007, SM,   Unterscheidung zwischen den verschiedenen Park-Richtungen  */
+/*                   in den  ActionCheckRAinRTW und ActionCheckBSinBSW Commands	*/
+/*		     mittels ChildID hinzugefügt.                 		*/
+/* 27.12.2007, SM,   Hint für den Bestatter geändert.                           */
+/* 27.12.2007, SM,   Bug behoben, dass der NAW am Krankenhaus sporadisch keinen */
+/*		     neuen NA bekommen hat und trotzdem losgefahren ist.        */
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt.           */
+/* 25.07.2008, SM,   NA-Begleitung der RTWs hinzugefügt.                        */
+/* 07.12.2008, SM,   RTH kommt jetzt von ausserhalb.				*/
+/* 07.12.2008, SM,   Bug behoben, dass der RTH sowie der BWK NAW keinen neuen	*/
+/* 		     Notarzt erhalten haben.					*/
+/*                                                                              */
+/* **************************************************************************** */
+
+object zum_krankenhaus : CommandScript
+{
+	Vector Klinik;
+	Actor krankenhaus;
+
+	zum_krankenhaus()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("zum_krankenhaus");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		if(!Game::IsFreeplay() || !Game::IsMultiplayer())
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		// Zum Krankenhaus nur mit Transports fahren...
+		Vehicle v(Caller);
+		ActorList l1;
+		PersonList Patienten = v.GetTransports();
+		Person Patient = Patienten.GetPerson(0);
+
+		if (v.HasCommand("bestatter"))
+		{
+			Mission::PlayHint("Anfahrt rechtsmedizinische Abteilung Klinikum Nord.");
+		} else
+		{
+			//BWK-NAW und RTH ausschliessen
+			if (!v.HasCommand("bwk_nef") && !v.HasCommand("rth_chr29"))
+			{
+				// Ist ein Notarzt an Board? Wenn nein, dann Begleitung erforderlich
+				bool NABegleitungAnBord=false;
+		   		PersonList PassengerListe = v.GetPassengers();
+				for(int x=0; x<PassengerListe.GetNumPersons(); x++)
+				{
+					if (PassengerListe.GetPerson(x)->HasCommand("ich_bin_ein_notarzt"))
+					{
+						// Notarzt ermitteln
+						Person Passenger=PassengerListe.GetPerson(x);
+						NABegleitungAnBord=true;
+						VehicleList nefliste(Passenger.GetName());
+						Vehicle nef = nefliste.GetVehicle(0);
+						nef.PushActionWait(ACTION_NEWLIST, 1);
+						nef.PushActionExecuteCommand(ACTION_NEWLIST, "aufsitzen_begleitung", &nef, 0, true);
+					}
+				}
+				if (Patient.GetUserData() == 42 && NABegleitungAnBord==false && Patient.GetLife() < 500 && !Patient.IsDead())
+				{
+					v.PushActionExecuteCommand(ACTION_INSERT, "RTW_Begleitung", Caller, 0, false);
+					return;
+				}
+
+			}
+			switch (Patient.GetInjuryReason())
+			{
+				case 1:
+					Mission::PlayHint("Patient mit Verbrennungen liegend aufgenommen.");
+					break;
+				case 2:
+					Mission::PlayHint("Patient mit Schuss- oder Stichverletzung aufgenommen.");
+					break;
+				case 3:
+					Mission::PlayHint("Patient mit Polytrauma liegend aufgenommen.");
+					break;
+				case 4:
+					Mission::PlayHint("Patient nach Suizidversuch sitzend aufgenommen.");
+					break;
+				case 5:
+					Mission::PlayHint("Patient mit atomarer Strahlung aufgenommen.");
+					break;
+				case 6:
+					Mission::PlayHint("Patient nach chemischer Kontamination aufgenommen.");
+					break;
+				case 7:
+					Mission::PlayHint("Patient nach biologischer Kontamination aufgenommen.");
+					break;
+				default:
+					Mission::PlayHint("Patient liegend aufgenommen.");
+					break;
+			}
+		}
+
+		if (v.GetVehicleType() != VT_AMBULANCE_RHC)
+		{
+			l1=Game::GetActors("krankenhaus");
+			if(l1.GetNumActors() > 0)
+			{
+				krankenhaus = *l1.GetActor(0);
+			}
+		} else {
+			l1=Game::GetActors("rth_chr29");
+			if(l1.GetNumActors() > 0)
+			{
+				krankenhaus = *l1.GetActor(0);
+			} else {
+			}
+		}
+
+		Klinik=krankenhaus.GetPosition();
+		Game::FindFreePosition(Caller,Klinik);
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			v.EnableBlueLights(false);
+			bool SoSiAnschalten = false;
+
+			// Ist ein Patient an Bord?
+			PersonList l3 = v.GetTransports();
+			if (l3.GetNumPersons() > 0)
+			{
+				// Ist ein Notarzt an Board? Wenn ja, dann Sondersignal
+		   		PersonList l2 = v.GetPassengers();
+				for(int i=0; i<l2.GetNumPersons(); i++)
+				{
+					if (l2.GetPerson(i)->HasCommand("heal"))
+					{
+						SoSiAnschalten = true;
+					}
+				}
+
+		   		//Patient mit LE < 600 && > 0 -> Sondersignal
+				for(int i=0; i<l3.GetNumPersons(); i++)
+				{
+					if (l3.GetPerson(i)->GetLife() <= 700 && l3.GetPerson(i)->GetLife() > 0)
+						SoSiAnschalten = true;
+				}
+
+		   		//Patient verstorben, dann kein Sondersignal
+				for(int i=0; i<l3.GetNumPersons(); i++)
+				{
+					if (l3.GetPerson(i)->IsDead())
+						SoSiAnschalten = false;
+				}	
+			}
+
+			if (SoSiAnschalten == true)
+			{
+				v.PushActionExecuteCommand(ACTION_APPEND, "VCmdSiren", Caller, 0, false);
+			}
+
+
+
+			if (v.HasCommand("f12_grtw"))
+			{
+				v.PushActionExecuteCommand(ACTION_APPEND, "gohome_grtw", Caller, 0, false);
+				return;
+			}
+
+			Caller->PushActionMove(ACTION_APPEND, Klinik+Vector(0,+150,0));
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+			Caller->PushActionTurnTo(ACTION_APPEND, Klinik+Vector(0,+300,0));
+			Caller->PushActionMove(ACTION_APPEND, Klinik);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+
+			PersonList persons = v.GetTransports();
+			if (persons.GetNumPersons() > 0)
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",Caller,childID,true);
+		} else {
+		if (v.GetVehicleType() == VT_AMBULANCE_RHC)
+		{
+			Caller->PushActionFlyTo(ACTION_APPEND, Klinik, true, 135);
+
+			PersonList persons = v.GetTransports();
+			if (persons.GetNumPersons() > 0)
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionEmptyRTW",Caller,childID,true);
+		}	}
+	}
+};
+
+
+
+object ActionEmptyRTW : CommandScript
+{
+	Vector TargetPos;
+
+	ActionEmptyRTW()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+		Vehicle v(Target);
+		if (v.GetVehicleType() != VT_AMBULANCE_RHC)
+		{
+	        	mPlaceList = Game::GetActors("krankenhaus_entry");
+		} 
+		else
+		{
+	        	mPlaceList = Game::GetActors("rth_entry");
+		}
+
+        	if (mPlaceList.GetNumActors() > 0)
+        	{
+			TargetPos=mPlaceList.GetActor(0)->GetPosition();
+		}
+		v.PushActionWait(ACTION_NEWLIST, 3.0f);
+		PersonList l = v.GetPassengers();
+		for(int i=0; i<l.GetNumPersons(); i++)
+		{
+			Person p (l.GetPerson(i));
+			l.GetPerson(i)->PushActionLeaveCar(ACTION_NEWLIST, Target);
+			l.GetPerson(i)->PushActionMove(ACTION_APPEND, TargetPos, true);
+    			l.GetPerson(i)->PushActionPutInBase(ACTION_APPEND);
+			l.GetPerson(i)->PushActionWait(ACTION_APPEND,1);
+			l.GetPerson(i)->PushActionDeleteOwner(ACTION_APPEND);
+			Caller->PushActionWait(ACTION_APPEND,4);
+			if (p.HasCommand("ich_bin_ein_notarzt"))
+			{
+
+			}
+			else
+			if (p.HasCommand("ich_bin_ein_ra"))
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionNeuerRA", Caller, ChildID, false);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionCheckRAinRTW", Caller, ChildID, false);
+			}
+			else
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionNeuerBS", Caller, ChildID, false);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "ActionCheckBSinBSW", Caller, ChildID, false);
+			}
+		}
+
+		if (!v.HasCommand("bwk_nef") && !v.HasCommand("rth_chr29"))
+			v.SetMaxPassengers(1);
+	}
+};
+
+object ActionNeuerNA : CommandScript
+{
+	Vector TargetPos;
+
+	ActionNeuerNA()
+	{
+		SetIcon("naholen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	   if (Caller->GetID() != Target->GetID())
+		return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+		Vehicle v(Target);
+		if (!v.HasCommand("rth_chr29"))
+		{
+	        	mPlaceList = Game::GetActors("krankenhaus_entry");
+		}
+		else
+		{
+	        	mPlaceList = Game::GetActors("rth_entry");
+		}
+
+        	if (mPlaceList.GetNumActors() > 0)
+        	TargetPos=mPlaceList.GetActor(0)->GetPosition();
+
+		Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/notarztm.e4p", Target->GetName());
+
+		if (Game::IsMultiplayer())
+		{
+			p.SetPlayerMP(2);
+		}
+
+		p.SetEquipment(EQUIP_EMERGENCY_CASE);
+		p.AssignCommand("ich_bin_ein_notarzt");
+
+		GameObjectList lna = Game::GetGameObjects(Target->GetName());
+		for(int i=0; i<lna.GetNumObjects(); i++)
+		{
+			GameObject *Obj1 = lna.GetObject(i);
+
+		}
+		Game::FindFreePosition(Obj1, TargetPos,100);
+		Obj1->SetPosition(TargetPos);
+		Obj1->SetCommandable(true);
+		Obj1->PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,false);
+	}
+};
+
+object ActionNeuerRA : CommandScript
+{
+	Vector TargetPos;
+
+	ActionNeuerRA()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+//BASTI		if (!Caller->IsCollidingWithTrigger("aufnahme"))
+//BASTI			return false;
+
+//BASTI	   if (Caller->GetID() != Target->GetID())
+//BASTI		return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+		Vehicle v(Target);
+		if (!v.HasCommand("rth_chr29"))
+		{
+	        	mPlaceList = Game::GetActors("krankenhaus_entry");
+		}
+		else
+		{
+	        	mPlaceList = Game::GetActors("rth_entry");
+		}
+
+        	if (mPlaceList.GetNumActors() > 0)
+        	TargetPos=mPlaceList.GetActor(0)->GetPosition();
+
+		Person p = Game::CreatePerson("mod:Prototypes/Persons/Ambulance/paramedic_upgraded2.e4p", Target->GetName());
+
+		if (Game::IsMultiplayer())
+		{
+			p.SetPlayerMP(2);
+		}
+
+		p.AssignCommand("ich_bin_ein_ra");
+
+		GameObjectList lna = Game::GetGameObjects(Target->GetName());
+		for(int i=0; i<lna.GetNumObjects(); i++)
+		{
+			GameObject *Obj1 = lna.GetObject(i);
+
+		}
+		Game::FindFreePosition(Obj1, TargetPos,100);
+		Obj1->SetPosition(TargetPos);
+		Obj1->SetCommandable(true);
+		Obj1->PushActionExecuteCommand(ACTION_NEWLIST,"entercar",Target,0,true);
+	}
+};
+
+object ActionCheckRAinRTW : CommandScript
+{
+	ActionCheckRAinRTW()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Target);
+		PersonList persons = vec.GetPassengers();
+
+		//Ist kein RA an Bord?
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_ra"))
+				anzahl_na++;
+		}
+
+		if (anzahl_na == 0)
+		{
+			vec.PushActionExecuteCommand(ACTION_NEWLIST,"ActionCheckRAinRTW",Caller,ChildID,true);
+		}
+		else
+		{
+
+			if (vec.HasCommand("bwk_nef") || vec.HasCommand("rth_chr29"))
+			{
+				vec.PushActionExecuteCommand(ACTION_NEWLIST,"ActionNeuerNA",Caller,ChildID,true);
+				vec.PushActionExecuteCommand(ACTION_APPEND,"ActionCheckNA",Caller,ChildID,false);
+				return;
+			}
+
+			if (vec.HasCommand("aufsitzen_nord"))
+			{
+			vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_nord",Caller,ChildID,true);
+			}
+
+			if (vec.HasCommand("aufsitzen_sued"))
+			{
+			vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_sued",Caller,ChildID,true);
+			}
+
+			if (vec.HasCommand("aufsitzen_west"))
+			{
+			vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_west",Caller,ChildID,true);
+			}
+
+			if (vec.HasCommand("aufsitzen_ost"))
+			{
+			vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_ost",Caller,ChildID,true);
+			}
+		}
+	}
+};
+
+
+object ActionCheckNA : CommandScript
+{
+	ActionCheckNA()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Target);
+		PersonList persons = vec.GetPassengers();
+
+		//Ist kein RA an Bord?
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+				anzahl_na++;
+		}
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_ra"))
+				anzahl_na++;
+		}
+
+		if (anzahl_na < 2)
+		{
+			vec.PushActionExecuteCommand(ACTION_NEWLIST,"ActionCheckNA",Caller,ChildID,true);
+		}
+		else
+		{
+			if (!vec.HasCommand("rth_chr29"))
+			{
+				if (vec.HasCommand("aufsitzen_nord"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_nord",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_sued"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_sued",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_west"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_west",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_ost"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_ost",Caller,ChildID,true);
+				}
+			}
+			else
+			{
+				vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_rth",Caller,ChildID,true);
+			}
+		}
+	}
+};
+
+object RTW_Begleitung : CommandScript
+{
+	RTW_Begleitung()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Mission::PlayHint("Notarzt-Begleitung erforderlich!");
+		Vehicle rtw(Caller);
+		rtw.SetMaxPassengers(2);
+	}
+};
+
+object NEF_zum_Krankenhaus : CommandScript
+{
+	NEF_zum_Krankenhaus()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		VehicleList NEFList(Caller->GetName());
+		if (NEFList.GetNumVehicles()>0)
+		{
+			Vehicle nef=NEFList.GetVehicle(0);
+			Vector Klinik;
+			ActorList l1;
+			Actor krankenhaus;
+
+			System::Log("Los NEF zum Krankenhaus!!!");
+
+			if (!nef.HasCommand("rth_chr29"))
+			{
+				l1=Game::GetActors("nef_na_ersatz");
+			}
+			else
+			{
+				l1=Game::GetActors("rth_chr29");
+			}
+
+			if(l1.GetNumActors() > 0)
+			{
+				krankenhaus = *l1.GetActor(0);
+			}
+			Klinik=krankenhaus.GetPosition();
+			Game::FindFreePosition(&nef,Klinik);
+			if (nef.GetBlinkerStatus() == BLT_BOTH)
+			{
+				nef.EnableBlinker(BLT_NONE);
+			}
+			if (nef.IsSpecialLightEnabled())
+			{
+				nef.EnableSpecialLights(false);
+				nef.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+			}
+			
+			nef.SetCommandable(false);
+			nef.EnableBlueLights(true);
+			nef.PushActionExecuteCommand(ACTION_APPEND, "VCmdSiren", &nef, 0, false);
+			if (!nef.HasCommand("rth_chr29"))
+			{
+				nef.PushActionMove(ACTION_APPEND, Klinik+Vector(0,+150,0));
+				nef.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&nef, 1, false);
+				nef.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", &nef, 2, false);
+				nef.PushActionTurnTo(ACTION_APPEND, Klinik+Vector(0,+300,0));
+				nef.PushActionMove(ACTION_APPEND, Klinik);
+
+			}
+			else
+			{
+				GameObject obj(Target);
+				float landingDirection = nef.GetValidLandingAngle(&obj, Klinik);
+				nef.PushActionFlyTo(ACTION_APPEND, Klinik, true, landingDirection);
+				nef.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", &nef, 2, false);
+			}
+
+			nef.PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",&nef, 2, false);
+			nef.PushActionExecuteCommand(ACTION_APPEND,"ActionNeuerNA",&nef,ChildID,true);
+			nef.PushActionExecuteCommand(ACTION_APPEND,"ActionCheckNAinNEF",&nef,ChildID,false);
+		}
+	}
+};
+
+object ActionCheckNAinNEF : CommandScript
+{
+	ActionCheckNAinNEF()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle vec(Caller);
+		vec.EnableBlueLights(false);
+		PersonList persons = vec.GetPassengers();
+		int anzahl_na = 0;
+		for(int j=0; j<persons.GetNumPersons(); j++)
+		{
+			if (persons.GetPerson(j)->HasCommand("ich_bin_ein_notarzt"))
+				anzahl_na++;
+		}
+
+		if (anzahl_na < 1)
+		{
+			vec.PushActionExecuteCommand(ACTION_NEWLIST,"ActionCheckNAinNEF",Caller,ChildID,true);
+		}
+		else
+		{
+			vec.SetCommandable(true);
+			if (!vec.HasCommand("rth_chr29"))
+			{
+				if (vec.HasCommand("aufsitzen_nord"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_nord",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_sued"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_sued",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_west"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_west",Caller,ChildID,true);
+				}
+
+				if (vec.HasCommand("aufsitzen_ost"))
+				{
+					vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_ost",Caller,ChildID,true);
+				}
+			}
+			else
+			{
+				vec.PushActionExecuteCommand(ACTION_APPEND,"gohome_rth",Caller,ChildID,true);
+			}
+		}
+	}
+};
+
+object aufsitzen_begleitung : CommandScript
+{
+	aufsitzen_begleitung()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		Vehicle Fz(Caller);
+
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			free = 1; 
+		}
+		if (Fz.GetVehicleType() == VT_AMBULANCE_NEF)
+		{
+			free = 1; 
+		}
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RHC)
+		{
+			free = 2; 
+		}
+		if (Fz.HasCommand("bwk_nef") || Fz.HasCommand("asb_naw"))
+		{
+			free = 2; 
+		} 
+		if (Fz.HasCommand("f12_grtw"))
+		{
+			free = 4; 
+		} 
+
+		if (Fz.GetFreePassengers()< free)
+		{
+			System::Log("AUFSITZEN_BEGLEITUNG: FreePass kleiner als free - Auf gehts");
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"NEF_zum_Krankenhaus",Caller,1,false);
+		}
+		else 
+		{
+			System::Log("AUFSITZEN_BEGLEITUNG: FreePass NICHT kleiner als free");
+			PersonList pl(Caller->GetName());
+			for (int i=pl.GetNumPersons()-1; i > -1; i--)
+			{
+				if (i == 0)
+					cid=118; // Der letzte löst Status 3 und Rückfahrt Wache aus
+				Person *p=pl.GetPerson(i);
+				GameObject *obj(p);
+
+				if (!p->IsInjured() && !p->HasCommand("ich_bin_ein_notarzt"))
+				{
+					obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,118,false);
+				} 
+				else 
+				{
+					if (i == 0)
+					{
+						System::Log("AUFSITZEN_BEGLEITUNG: I IST NULL, Abwarten und Auf gehts");
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_begleitung",Caller,1,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"NEF_zum_Krankenhaus",Caller,1,false);
+					}
+				}
+			}
+		}
+	}
+};
+
+object await_bording_begleitung : CommandScript
+{
+
+   await_bording_begleitung()
+   {
+   }
+
+
+   bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+   {
+      return true;
+   }
+
+   void PushActions(GameObject *Caller, Actor *Target, int childID)
+   {
+	Vehicle v(Caller);
+	int pc=v.GetNumPassengers();
+	PersonList pl2(Target->GetName());
+	int n=pl2.GetNumPersons();
+	for (int q=0;q<n;q++)
+	{
+		if (pl2.GetPerson(q)->IsInjured() || pl2.GetPerson(q)->HasCommand("ich_bin_ein_notarzt") || v.HasCommand("bwk_nef") || v.HasCommand("rth_chr29"))
+			n--;
+
+	}
+	if (pc < n)
+	{
+		Caller->PushActionWait(ACTION_INSERTBEFORELAST,2);
+		Caller->PushActionExecuteCommand(ACTION_INSERTBEFORELAST,"await_bording_begleitung",Caller,childID,false);
+	} 
+	else
+        {
+	}
+   }
+};
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////// GRTW
+
+object zum_krankenhaus_grtw : CommandScript
+{
+	zum_krankenhaus_grtw()
+	{
+		SetIcon("zum_krankenhaus");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		switch(childID)
+		{
+			case 0:
+				ActorList l1;
+				Actor krankenhaus;
+				l1=Game::GetActors("krankenhaus_grtw");
+				if(l1.GetNumActors() > 0)
+				{
+					krankenhaus = *l1.GetActor(0);
+				}
+				Vector Klinik=krankenhaus.GetPosition();
+				Game::FindFreePosition(Caller,Klinik);
+				if (v.GetBlinkerStatus() == BLT_BOTH)
+				{
+		 			v.EnableBlinker(BLT_NONE);
+				}
+				if (v.IsSpecialLightEnabled())
+				{
+		 			v.EnableSpecialLights(false);
+					v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+				}
+
+				PersonList l3 = v.GetTransports();
+				if (l3.GetNumPersons() > 0)
+				{
+					Mission::PlayHint("12-GRTW hat Patienten mit diversen Verletzungsmustern aufgenommen, Übergabe Klinikum Nord");
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdSiren", Caller, 0, false);
+					Caller->PushActionMove(ACTION_APPEND, Klinik+Vector(0,+150,0));
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+					Caller->PushActionTurnTo(ACTION_APPEND, Klinik+Vector(0,+300,0));
+					Caller->PushActionMove(ACTION_APPEND, Klinik);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"zum_krankenhaus_grtw",Caller, 1, false);
+				} 
+				else
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_grtw",Caller);
+				}
+			break;
+
+			case 1:
+				Vehicle v(Caller);
+				PersonList pTrans = v.GetTransports();
+				for(int i = 0; i < pTrans.GetNumPersons(); i++)
+				{
+					Person pT(pTrans.GetPerson(i));
+					v.RemoveTransport(&pT);
+					pT.PushActionWait(ACTION_NEWLIST, 2.f);
+					pT.PushActionDeleteOwner(ACTION_APPEND);
+				}
+				PersonList CheckList = v.GetTransports();
+				if (CheckList.GetNumPersons() == 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_grtw",Caller,0,true);
+				}
+			break;
+		}
+	}
+};

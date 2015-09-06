@@ -1,0 +1,81 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* FLYTOLANDING.SCRIPT - Fliegen und Landen für den Hubschrauber.	        */
+/*                                                                              */
+/* Dieses Commandscript ermöglicht dem Hubschrauber das Fliegen und Landen.	*/
+/* Gelandet werden kann aber nur, wenn der Zielpunkt durch die Polizei als	*/
+/* Landepunkt eingerichtet wurde.                                               */
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications			                */
+/*                                                                              */
+/* 31.07.2008, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object FlyToLanding : CommandScript
+{
+	Vector TargetPos;
+	float landingDirection;
+	
+	FlyToLanding()
+	{
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL);
+		SetHighlightingEnabled(false);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE || Caller->GetID() == Target->GetID())
+			return false;
+
+		Vehicle heli(Caller);
+		if (!heli.IsValid() || /*heli.IsOnGround() ||*/ /*Game::IsWater(x,y,z) || */(heli.GetVehicleType() != VT_THW_FGRT_BH && heli.HasTransportOnStretcher()))
+			return false;
+		TargetPos = Game::GetCommandPos();
+		
+		// check if position is valid landing position
+		GameObject obj(Target);
+		landingDirection = heli.GetValidLandingAngle(&obj, TargetPos);
+		if (landingDirection >= 0.f)
+		{
+			
+			return true;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObjectList Zielpersonen = Caller->GetObjectsInRange(20000.0f, ACTOR_PERSON);
+		for(int i = 0; i < Zielpersonen.GetNumObjects(); i++)
+		{
+			GameObject *Zielperson = Zielpersonen.GetObject(i);
+			if(Zielperson->HasCommand("hier_landen") && landingDirection >=0.f)
+			{
+				if(Game::FindFreePosition(Zielperson, TargetPos, 450.0f))
+				{
+					Mission::PlayHint("Christoph 29 im Landeanflug...");
+					Caller->PushActionFlyTo(ACTION_NEWLIST, TargetPos, true, landingDirection);
+				}
+
+				if(!Game::FindFreePosition(Zielperson, TargetPos, 450.0f))
+				{
+					Mission::PlayHint("Pol für Christoph 29 kommen. Benötigen gesichterten Landepunkt!");
+					return;
+				}
+			}
+			
+		}
+
+	}
+};

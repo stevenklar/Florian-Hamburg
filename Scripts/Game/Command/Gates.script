@@ -1,0 +1,233 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* GATES.SCRIPT - Script zum Steuern der Tore an den Wachen sowie des Rufens	*/
+/*		  von Personal, welches in der Wache zum Fahrzeug läuft.        */
+/*                                                                              */
+/* Dieses Commandscript öffnet und schliesst die Tore der Wachen bei einem      */
+/* Alarm automatisch und ruft, wenn ausgeführt, eine durch die Childid		*/
+/* gesteuerte Anzahl von Personen, die dann zum Fahrzeug laufen.                */
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications	 				*/
+/*                                                                              */
+/* 19.11.2007, SM,   Initial-Version                                            */
+/* 07.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt.           */
+/* 16.06.2009, SM,   Fahrzeuge haben nachts in der Wache kein Licht mehr an.	*/
+/*                                                                              */
+/* **************************************************************************** */
+
+object OpenGate : CommandScript
+{
+	OpenGate()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+	return false;
+
+	if (Game::IsFreeplay() || Game::IsMultiplayer())
+	return true;
+
+	return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+	const char *TORTEMP;
+	TORTEMP = "gate";
+	const char *FAHRZEUGNAME;
+	FAHRZEUGNAME = Caller->GetName();
+	char TORNAME[255];
+	snprintf(TORNAME, 255, "%s_%s",TORTEMP,FAHRZEUGNAME);
+	GameObjectList gates(TORNAME); // Name des Tores bzw. Fahrzeuges
+        for(int i = 0; i < gates.GetNumObjects(); i++)
+		{
+			GameObject * gate = gates.GetObject(i);
+			if (gate)
+			{
+				// Tor öffnen
+				gate->SetAnimation("open");
+				gate->SetUserData(1);
+				Vehicle v(Caller);
+				v.EnableHeadLights(true);
+			}
+		}
+	}
+};
+
+
+object CloseGate : CommandScript
+{
+	CloseGate()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+	return false;
+
+	if (Game::IsFreeplay() || Game::IsMultiplayer())
+	return true;
+
+	return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+	const char *TORTEMP;
+	TORTEMP = "gate";
+	const char *FAHRZEUGNAME;
+	FAHRZEUGNAME = Caller->GetName();
+	char TORNAME[255];
+	snprintf(TORNAME, 255, "%s_%s",TORTEMP,FAHRZEUGNAME);
+	GameObjectList gates(TORNAME); // Name des Tores bzw. Fahrzeuges
+        for(int i = 0; i < gates.GetNumObjects(); i++)
+		{
+			GameObject * gate = gates.GetObject(i);
+			if (gate)
+			{
+				// Tor öffnen
+				gate->SetAnimation("close");
+				gate->SetUserData(1);
+				Vehicle v(Caller);
+				v.EnableHeadLights(false);
+			}
+		}
+	}
+};
+
+object Reset_Alarmstatus : CommandScript
+{
+	Reset_Alarmstatus()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+	return false;
+
+	if (Game::IsFreeplay() || Game::IsMultiplayer())
+	return true;
+
+	return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->HasCommand("alarmiert"))
+		{
+			Caller->RemoveCommand("alarmiert");
+		}
+	}
+};
+
+object alarmiert : CommandScript
+{
+	alarmiert()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object RufePersonal : CommandScript
+{
+	RufePersonal()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+	return false;
+
+	if (Game::IsFreeplay() || Game::IsMultiplayer())
+	return true;
+
+	return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+	const char *FullName = Caller->GetName();
+	const char *t1;
+	const char *t2;
+	const char *t3;
+	if (FullName[0] == 'f')
+	{
+		t1 = "f";
+	}
+
+	if (FullName[1] == '1')
+	{
+		t2 = "1";
+	}
+	if (FullName[1] == '2')
+	{
+		t2 = "2";
+	}
+	if (FullName[1] == '3')
+	{
+		t2 = "3";
+	}
+	if (FullName[2] == '1')
+	{
+		t3 = "1";
+	}
+	if (FullName[2] == '2')
+	{
+		t3 = "2";
+	}
+	if (FullName[2] == '3')
+	{
+		t3 = "3";
+	}
+	const char *StartPunktTemp = "personal";
+	char StartPunktName[255];
+	snprintf(StartPunktName, 255, "%s%s%s_%s",t1,t2,t3,StartPunktTemp);
+	ActorList StartPunktListe;
+	ActorList ZielPunktListe;
+
+	StartPunktListe = Game::GetActors(StartPunktName);
+	ZielPunktListe = Game::GetActors(FullName);
+
+	Actor ZielPunktObjekt;
+	ZielPunktObjekt = *ZielPunktListe.GetActor(0);
+
+	if (!Caller->HasCommand("alarmiert"))
+		{
+		if (StartPunktListe.GetNumActors() > 0)
+			{
+			Actor StartPunktObjekt;
+			StartPunktObjekt = *StartPunktListe.GetActor(0);
+			Vector StartPosition = StartPunktObjekt.GetPosition();
+			Vector ZielPosition = ZielPunktObjekt.GetPosition();
+			for(int i = 0; i < ChildID; i++)
+				{
+				Person pShow = Game::CreatePerson("mod:Prototypes/Persons/Feuerwehr Hamburg/feuerwehrmann_zivil.e4p", "new_personal");
+				if (Game::IsMultiplayer())
+				{
+					pShow.SetPlayerMP(Caller->GetPlayerMP());
+				}
+				Game::FindFreePosition(&pShow, StartPosition);
+				pShow.SetPosition(StartPosition);
+				pShow.PushActionMove(ACTION_APPEND, ZielPosition, true);
+				pShow.PushActionDeleteOwner(ACTION_APPEND);
+				}
+			}
+		Caller->AssignCommand("alarmiert");
+
+    		}
+	}
+};

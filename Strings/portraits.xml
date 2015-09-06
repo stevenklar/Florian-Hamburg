@@ -1,0 +1,284 @@
+<strings>
+
+<string name="ID_PORTRAIT_F12_KLF">Florian Hamburg 12/0</string>
+<string name="ID_PORTRAIT_F12_HLF1">Florian Hamburg 12/1</string>
+<string name="ID_PORTRAIT_F12_HLF2">Florian Hamburg 12/2</string>
+<string name="ID_PORTRAIT_F12_TMF">Florian Hamburg 12/5</string>
+<string name="ID_PORTRAIT_F12_TMFB">Florian Hamburg 12/5</string>
+<string name="ID_PORTRAIT_F12_RTWA">Florian Hamburg 12 Anton</string>
+<string name="ID_PORTRAIT_F12_RTWB">Florian Hamburg 12 Berta</string>
+<string name="ID_PORTRAIT_F12_RTWC">Florian Hamburg 12 Cäsar</string>
+<string name="ID_PORTRAIT_F12_BDIENST">Florian Hamburg BDI 10/1</string>
+<string name="ID_PORTRAIT_F12_WLF_LEER">Florian Hamburg 12 WLF</string>
+<string name="ID_PORTRAIT_F12_WLF_CONTAINER_ASGW">Florian Hamburg 12 AB-ASG</string>
+<string name="ID_PORTRAIT_F12_WLF_ASGW">Florian Hamburg 12 WLF AB-ASG</string>
+<string name="ID_PORTRAIT_F12_GWH">Florian Hamburg GW-H 12</string>
+<string name="ID_PORTRAIT_F12_RW">Florian Hamburg RW 12</string>
+<string name="ID_PORTRAIT_F12_GRTW">Florian Hamburg GRTW 12</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F22_KLF">Florian Hamburg 22/0</string>
+<string name="ID_PORTRAIT_F22_HLF1">Florian Hamburg 22/1</string>
+<string name="ID_PORTRAIT_F22_TMF">Florian Hamburg 22/5</string>
+<string name="ID_PORTRAIT_F22_TMFB">Florian Hamburg 22/5</string>
+<string name="ID_PORTRAIT_F22_RTWA">Florian Hamburg 22 Anton</string>
+<string name="ID_PORTRAIT_F22_RTWB">Florian Hamburg 22 Berta</string>
+<string name="ID_PORTRAIT_F22_RTWC">Florian Hamburg 22 Cäsar</string>
+<string name="ID_PORTRAIT_F22_GW">Florian Hamburg Gerätwagen</string>
+<string name="ID_PORTRAIT_F22_ADIENST">Florian Hamburg 22 ELW A</string>
+<string name="ID_PORTRAIT_F22_BFW">Florian Hamburg Befehlswagen </string>
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F23_KLF">Florian Hamburg 23/0</string>
+<string name="ID_PORTRAIT_F23_HLF1">Florian Hamburg 23/1</string>
+<string name="ID_PORTRAIT_F23_HLF2">Florian Hamburg 23/2</string>
+<string name="ID_PORTRAIT_F23_DLK">Florian Hamburg 23/5</string>
+<string name="ID_PORTRAIT_F23_DLKB">Florian Hamburg 23/5</string>
+<string name="ID_PORTRAIT_F23_RTWA">Florian Hamburg 23 Anton</string>
+<string name="ID_PORTRAIT_F23_RTWB">Florian Hamburg 23 Berta</string>
+<string name="ID_PORTRAIT_F23_RTWC">Florian Hamburg 23 Cäsar</string>
+<string name="ID_PORTRAIT_F23_BDIENST">Florian Hamburg B-Dienst 20/1</string>
+
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F33_KLF">Florian Hamburg 33/0</string>
+<string name="ID_PORTRAIT_F33_HLF1">Florian Hamburg 33/1</string>
+<string name="ID_PORTRAIT_F33_TMF">Florian Hamburg 33/5</string>
+<string name="ID_PORTRAIT_F33_TMFB">Florian Hamburg 33/5</string>
+<string name="ID_PORTRAIT_F33_RTWA">Florian Hamburg 33 Anton</string>
+<string name="ID_PORTRAIT_F33_RTWK">Florian Hamburg 33 Kaufmann</string>
+<string name="ID_PORTRAIT_F33_GWRD">Florian Hamburg 33 GW-Rettungsdienst</string>
+<string name="ID_PORTRAIT_F33_GWRDB">Florian Hamburg 33 GW-Rettungsdienst</string>
+
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F32_UDIENST">Florian Hamburg 32 U-Dienst</string>
+<string name="ID_PORTRAIT_F32_KMRD">Florian Hamburg Kampfmittelräumdienst</string>
+<string name="ID_PORTRAIT_F32_WLF_DEKON">Florian Hamburg 32 WLF AB-Dekontamination</string>
+<string name="ID_PORTRAIT_F32_WLF_LEER">Florian Hamburg 32 WLF</string>
+<string name="ID_PORTRAIT_F32_WLF_CONTAINER_DEKON">Florian Hamburg 32 AB-Dekontamination</string>
+<string name="ID_PORTRAIT_F32_KRAN">Florian Hamburg 32 Kran</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F3917_HLF1">Florian Hamburg Rothenburgsort/Veddel 1</string>
+<string name="ID_PORTRAIT_F3917_HLF2">Florian Hamburg Rothenburgsort/Veddel 2</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F25_SEGT">Florian Hamburg 25 SEG Tauchen</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_F14_NEF">Florian Hamburg 14 NEF</string>
+<string name="ID_PORTRAIT_F22_NEF">Florian Hamburg 22 NEF</string>
+<string name="ID_PORTRAIT_BWK_NEF">Florian Hamburg NAW 23 Berta</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_POL_NORD_STW1">Peter 15/1</string>
+<string name="ID_PORTRAIT_POL_NORD_STW2">Peter 15/2</string>
+<string name="ID_PORTRAIT_POL_NORD_STW3">Peter 21/3</string>
+<string name="ID_PORTRAIT_POL_NORD_STW4">Peter 21/4</string>
+<string name="ID_PORTRAIT_POL_NORD_MTW1">Peter 21/5</string>
+<string name="ID_PORTRAIT_POL_NORD_KRIPO1">Peter Kripo 21/1</string>
+<string name="ID_PORTRAIT_POL_NORD_KRIPO2">Peter Kripo 21/2</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_POL_SUED_STW1">Peter 41/1</string>
+<string name="ID_PORTRAIT_POL_SUED_STW2">Peter 41/2</string>
+<string name="ID_PORTRAIT_POL_SUED_STW3">Peter 41/3</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_ASB_RTW1">Sama Ottensen 1</string>
+<string name="ID_PORTRAIT_ASB_RTW2">Sama Ottensen 2</string>
+<string name="ID_PORTRAIT_ASB_RTW3">Sama Ottensen 3</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_THW_ELW">Heros Hamburg Altona ELW</string>
+<string name="ID_PORTRAIT_THW_MLW">Heros Hamburg Altona MLW</string>
+<string name="ID_PORTRAIT_THW_UNIMOG">Heros Hamburg Altona MLW2</string>
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_ENTSTOERDIENST">HWW Entstördienst Wasser</string>
+<string name="ID_PORTRAIT_ASF1">Abschleppfahrzeug 1</string>
+<string name="ID_PORTRAIT_ASF2">Abschleppfahrzeug 2</string>
+<string name="ID_PORTRAIT_BESTATTUNGSWAGEN">Bestattungswagen</string>
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_RTH_CHR29">Christoph 29</string>
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_VATTENFALL">Vattenfall Entstördienst</string>
+
+
+
+
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_NOTARZT">Notarzt</string>
+<string name="ID_PORTRAIT_SANITAETER">Rettungsassistent</string>
+<string name="ID_PORTRAIT_SANITAETERINJURED">Rettungsassistent</string>
+<string name="ID_PORTRAIT_SANITAETERSINGLE">Rettungsassistent</string>
+<string name="ID_PORTRAIT_BESTATTER">Bestatter</string>
+<string name="ID_PORTRAIT_BESTATTERSINGLE">Bestatter</string>
+<string name="ID_PORTRAIT_BESTATTERINJURED">Bestatter</string>
+
+
+
+
+<string name="ID_PORTRAIT_FEUERWEHRMANN">Feuerwehrmann</string>
+<string name="ID_PORTRAIT_FEUERWEHRMANNDLK">Feuerwehrmann</string>
+<string name="ID_PORTRAIT_FUEHRUNGSDIENST">B-Dienst</string>
+<string name="ID_PORTRAIT_FAHRZEUGFUEHRER">Fahrzeugführer</string>
+<string name="ID_PORTRAIT_ADIENST">A-Dienst</string>
+<string name="ID_PORTRAIT_ZUGFUEHRER">Zugführer</string>
+<string name="ID_PORTRAIT_KAMPFMITTELRAEUMER">Sprengmeister</string>
+<string name="ID_PORTRAIT_FEUERWEHRMANNATEMSCHUTZ">Atemschutzgeräteträger</string>
+<string name="ID_PORTRAIT_FEUERWEHRMANNCSA">CSA-Träger</string>
+<string name="ID_PORTRAIT_HOEHENRETTER">Höhenretter</string>
+<string name="ID_PORTRAIT_TAUCHER">Taucher</string>
+<string name="ID_PORTRAIT_UDIENST">Zugführer Umweltdienst</string>
+<string name="ID_PORTRAIT_DISPONENT">FEZ Disponent</string>
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_POLIZIST">Polizist</string>
+<string name="ID_PORTRAIT_KRIPOBEAMTER">Beamter der Kriminalpolizei</string>
+
+
+
+
+
+
+<string name="ID_PORTRAIT_VATTENFALLTECHNIKER">Vattenfall Techniker</string>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<string name="ID_PORTRAIT_BARREL">Fass</string>
+<string name="ID_PORTRAIT_DUMMY">Dummy</string>
+<string name="ID_PORTRAIT_FIRE EXTINGUISHER">Feuerlöscher</string>
+<string name="ID_PORTRAIT_JAWS OF LIFE">Rettungsschere</string>
+<string name="ID_PORTRAIT_CHAIN SAW">Motorsäge</string>
+<string name="ID_PORTRAIT_FIREAXE">Axt</string>
+<string name="ID_PORTRAIT_FIRE HOSE">Schlauch</string>
+<string name="ID_PORTRAIT_FLASH GRENADE">Blendgranate</string>
+<string name="ID_PORTRAIT_ROAD BLOCK">Straßensperre</string>
+<string name="ID_PORTRAIT_JUMP PAD">Sprungpolster</string>
+<string name="ID_PORTRAIT_PISTOL">Waffe</string>
+<string name="ID_PORTRAIT_REDIRECTSIGN">Kelle</string>
+<string name="ID_PORTRAIT_RIFLE">Gewehr</string>
+<string name="ID_PORTRAIT_SCOUT">Aufklärer</string>
+
+</strings>

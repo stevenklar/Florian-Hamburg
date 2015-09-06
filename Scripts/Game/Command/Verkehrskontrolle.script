@@ -1,0 +1,619 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* VERKEHRSKONTROLLE.SCRIPT - Kontrolle von Zivilfahrzeugen durch Polizisten	*/
+/*                                                                              */
+/* Dieses Commandscript dient zur Verkehrskontrolle von Zivilfahrzeugen durch 	*/
+/* die Polizei.		                                                        */
+/*                                                                              */
+/* Original-Script von  : Eins Eins Zwo Modifications	                        */
+/*                                                                              */
+/* 28.07.2008, SM,   Initial-Version						*/
+/* 16.06.2009, SM,   Bug behoben, dass keine Verkehrskontrolle durchgeführt 	*/
+/*		     werden konnte, Command dem Blitzer hinzugefügt.		*/
+/*                                                                              */
+/* **************************************************************************** */
+
+
+Path OldCivilPath; // Urpsrünglicher Pfad des Zivilfahrzeuges
+Person p1; // Person, welche am Radarmessgerät steht
+Person p2; // Person, welche rauswinkt
+Person p3; // Person, welche kontrolliert
+Person p4; // Person, die evtl. Täter in das Polizeifahrzeug bringt
+
+
+object Radarfalle_Messung : CommandScript
+{
+	Radarfalle_Messung()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("messung");
+		SetCursor("messung");
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (v.GetUserData() == -1)
+		{
+			return false;
+		}
+		if (v.GetType() == ACTOR_VEHICLE && (v.GetVehicleType() == VT_NOSQUAD))
+		{
+			GameObjectList list;
+			Game::CollectObstaclesOnVirtualObject("P1_1",list,ACTOR_PERSON);
+			for (int i=0;i<list.GetNumObjects();i++)
+			{
+				Person p = list.GetObject(i);
+				if (p.GetRole() == ROLE_SQUAD)
+					return true;
+			}
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+
+		if (v.GetType() == ACTOR_VEHICLE && !v.IsCollidingWithTrigger("Messung") && (v.GetVehicleType() == VT_NOSQUAD))
+		{
+			Mission::PlayHint("Fahrzeug ausserhalb der Messreichweite!");
+			return;
+		}
+		if (v.GetType() == ACTOR_VEHICLE && v.IsCollidingWithTrigger("Messung") && (v.GetVehicleType() == VT_NOSQUAD))
+		{
+
+			v.AssignCommand("erwischt");
+
+			//Zufallszahl für die Messung
+			int Geschwindigkeit = rand()%20;
+			int OverGeschwindigkeit;
+
+			if (Geschwindigkeit <= 5) ¨
+				OverGeschwindigkeit = rand()%10;
+			if (Geschwindigkeit == 6 || Geschwindigkeit == 12)
+				OverGeschwindigkeit = rand()%15;
+			if (Geschwindigkeit == 7 || Geschwindigkeit == 13)
+				OverGeschwindigkeit = rand()%25;
+			if (Geschwindigkeit == 8)
+				OverGeschwindigkeit = rand()%40;
+			if (Geschwindigkeit == 9)
+				OverGeschwindigkeit = rand()%60;
+			if (Geschwindigkeit == 19)
+				OverGeschwindigkeit = rand()%100;
+
+			Geschwindigkeit = 50 + OverGeschwindigkeit;
+
+			if (Geschwindigkeit > 59 )
+			{
+				GameObjectList lblitz("blitz");
+				GameObject blitz = lblitz.GetObject(0);
+				blitz.StartParticleEffect();
+				Audio::PlaySample("mod:/Audio/FX/blitzer.wav");
+			}
+			if (Geschwindigkeit == 60)
+			{
+				Mission::PlayHint("60 km/h");
+				v.SetUserData(1015);
+			}
+			else if (Geschwindigkeit > 60 && Geschwindigkeit < 66)
+			{
+				Mission::PlayHint("65 km/h");
+				v.SetUserData(1025);
+			}
+			else if (Geschwindigkeit > 65 && Geschwindigkeit < 71)
+			{
+				Mission::PlayHint("70 km/h");
+				v.SetUserData(1035);
+			}
+			else if (Geschwindigkeit > 70 && Geschwindigkeit <76)
+			{
+				Mission::PlayHint("75 km/h");
+				v.SetUserData(1050);
+			}
+			else if (Geschwindigkeit > 75 && Geschwindigkeit <81)
+			{
+				Mission::PlayHint("80 km/h");
+				v.SetUserData(1060);
+			}
+			else if (Geschwindigkeit > 80 && Geschwindigkeit <86)
+			{
+				Mission::PlayHint("85 km/h");
+				v.SetUserData(1100);
+			}
+			else if (Geschwindigkeit > 85 && Geschwindigkeit <91)
+			{
+				Mission::PlayHint("90 km/h");
+				v.SetUserData(1125);
+			}
+			else if (Geschwindigkeit > 90 && Geschwindigkeit <96)
+			{
+				Mission::PlayHint("95 km/h");
+				v.SetUserData(1175);
+			}
+			else if (Geschwindigkeit > 95 && Geschwindigkeit <101)
+			{
+				Mission::PlayHint("100 km/h");
+				v.SetUserData(1300);
+			}
+			else if (Geschwindigkeit > 100)
+			{
+				Mission::PlayHint("Über 100 km/h");
+				v.SetUserData(1425);
+			}
+			else
+			{
+				Mission::PlayHint("Geschwindigkeit im zulässigen Bereich!");
+				v.SetUserData(-1);
+			}
+
+			p2.PushActionExecuteCommand(ACTION_NEWLIST, "Rauswinken", &v, 0, false);
+		}
+	}
+};
+
+Object Radarfalle_Aufstellen : CommandScript
+{
+	Vector KontrollpunktPosition;
+	Actor Kontrollpunkt;
+
+	Radarfalle_Aufstellen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("radarfalle_aufbauen");
+		SetCursor("radarfalle_aufbauen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (v.HasCommand("Radarfalle_Abbauen"))
+		{
+			return false;
+		}
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+
+		switch(ChildID)
+		{
+			case 0:
+				Caller->EnableSpecialLights(false);
+			       	Caller->EnableBreakLights(false);
+        			Caller->EnableBlueLights(false);
+				Caller->AssignCommand("ich_bin_nicht_frei");
+				Mission::PlayHint("Fahren zur Verkehrskontrolle zum vorgesehenen Kontrollpunkt!");
+				if (v.GetNumPassengers() < 4)
+				{
+					Mission::PlayHint("Es werden mindestens 4 Polizeibeamte für die Radarmessung benötigt!");
+					return;
+				}
+				ActorList Zielliste;
+				Zielliste=Game::GetActors("BlitzFzg");
+				if(Zielliste.GetNumActors() > 0)
+				{
+					Kontrollpunkt = *Zielliste.GetActor(0);
+				}
+				KontrollpunktPosition=Kontrollpunkt.GetPosition();
+				Game::FindFreePosition(Caller,KontrollpunktPosition);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+				Caller->PushActionMove(ACTION_APPEND, KontrollpunktPosition+Vector(0,+150,0), false);
+				Caller->PushActionTurnTo(ACTION_APPEND, KontrollpunktPosition+Vector(0,+300,0));
+				Caller->PushActionMove(ACTION_APPEND, KontrollpunktPosition);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"Radarfalle_Aufstellen",Caller,1,false);
+			break;
+
+			case 1:
+				Mission::PlayHint("Aufbauen der Radarmessanlage");
+
+				//Vier Leute ausrüsten und aussteigen lassen
+				PersonList PersList = v.GetPassengers();
+				p1 = PersList.GetPerson(0);
+				p2 = PersList.GetPerson(1);
+				p3 = PersList.GetPerson(2);
+				p4 = PersList.GetPerson(3);
+				p3.AssignCommand("Bussgeld");
+				ActorList lV_P1("P1_1");
+				ActorList lV_P2("P2_1");
+				ActorList lV_P3("P3_1");
+				ActorList lV_P4("P4_1");
+				Actor V_P1 = *lV_P1.GetActor(0);
+				Actor V_P2 = *lV_P2.GetActor(0);
+				Actor V_P3 = *lV_P3.GetActor(0);
+				Actor V_P4 = *lV_P4.GetActor(0);
+				Vector pos1 = V_P1.GetPosition();
+				Vector pos2 = V_P2.GetPosition();
+				Vector pos3 = V_P3.GetPosition();
+				Vector pos4 = V_P4.GetPosition();
+
+				p1.SetCommandable(false);
+				p1.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				p1.PushActionMove(ACTION_APPEND,Caller,TARGET_EQUIPMENTDOOR);
+				p1.PushActionTurnTo(ACTION_APPEND,Caller);
+				p1.PushActionGetEquipment(ACTION_APPEND,&p1,EQUIP_THW_CASE);
+				Game::FindFreePosition(&p1,pos1);
+
+				p1.PushActionMove(ACTION_APPEND,pos1);
+				p1.PushActionExecuteCommand(ACTION_APPEND,"Radarfalle_Aufstellen",Caller,2,false);
+				p1.PushActionRemoveEquipment(ACTION_APPEND);
+				p1.SetCommandable(true);
+
+				Caller->AssignCommand("Radarfalle_Abbauen");
+				Caller->RemoveCommand("Radarfalle_Aufstellen");
+				Caller->RemoveCommand("aufsitzen_nord");
+				p2.SetCommandable(false);
+				p2.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				p2.PushActionGetEquipment(ACTION_APPEND,Caller,EQUIP_REDIRECTSIGN);
+				Game::FindFreePosition(&p2,pos2);
+				p2.PushActionMove(ACTION_APPEND,pos2);
+				p2.PushActionTurnTo(ACTION_APPEND, &p1);
+				p2.SetCommandable(true);
+
+				p3.SetCommandable(false);
+				p3.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+	
+				Game::FindFreePosition(&p3,pos3);
+				p3.PushActionMove(ACTION_APPEND,pos3);
+				p3.SetCommandable(true);
+
+				p4.SetCommandable(false);
+				p4.PushActionLeaveCar(ACTION_NEWLIST,Caller);
+				Game::FindFreePosition(&p4,pos4);
+				p4.PushActionMove(ACTION_APPEND,pos4);
+				p4.SetCommandable(true);
+			break;
+
+			case 2:
+				GameObjectList ltrap("Speedtrap");
+				GameObject trap = ltrap.GetObject(0);
+				trap.PushActionShowHide(ACTION_NEWLIST,false);	
+				trap.AssignCommand("Radarfalle_Messung");
+				Caller->PushActionTurnTo(ACTION_APPEND, &trap);
+			break;
+		}
+	}
+};
+
+
+object Radarfalle_Abbauen : CommandScript
+{
+	Radarfalle_Abbauen()
+	{
+		SetIcon("aufsitzen");
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Caller->GetID() != Target->GetID())
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->RemoveCommand("Radarfalle_Abbauen");
+		GameObjectList ltrap("Speedtrap");
+		GameObject trap = ltrap.GetObject(0);
+		trap.PushActionShowHide(ACTION_NEWLIST,true);
+
+		PersonList PersList(ROLE_SQUAD);
+		for (int i = 0; i < PersList.GetNumPersons();i++)
+		{
+			Person p = *PersList.GetPerson(i);
+			if (p.HasCommand("Bussgeld"))
+			{
+				p.RemoveCommand("Bussgeld");
+			}
+		}
+		Caller->AssignCommand("Radarfalle_Aufstellen");
+		Caller->AssignCommand("aufsitzen_nord");
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "aufsitzen_nord", Caller, 0, false);
+	}
+};
+
+object StopPersonAnimation: CommandScript
+{
+	StopPersonAnimation()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->SetAnimation("idle");
+	}
+};
+
+
+object Rauswinken : CommandScript
+{
+	Rauswinken()
+	{
+		SetIcon("fahrzeug_kontrollieren");
+		SetCursor("fahrzeug_kontrollieren");
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (v.HasCommand("erwischt"))
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Person p (Caller);
+		p.SetAnimation("sendvehicle");
+		Vehicle v(Target);
+
+		OldCivilPath = v.GetObjectPath();
+
+		//Generiere Personen ins Fahrzeug
+		//1 oder 2?
+		int anzahl;
+		int einszwei = rand()% 5;
+		if (einszwei <4) anzahl = 2;
+		else
+			anzahl = 1;
+		v.SetMaxPassengers (anzahl);
+		Person persons[2];
+		for (int i =0; i < anzahl; i++)
+		{
+			persons[i] = Game::CreatePerson("mod:Prototypes/Persons/Civil/dealer01.e4p","Driver");
+			v.AddPassenger(persons[i]);
+		}
+		//Fahrzeug auf den Kontrollpunkt schicken
+		v.ClearActions();
+		v.EnableBlinker(BLT_RIGHT);
+		v.SetObjectPath("Kontrollweg",4.0f);
+		p.PushActionWait(ACTION_APPEND,5.0f);
+		p.PushActionExecuteCommand(ACTION_APPEND,"StopPersonAnimation",Caller,1,true);
+	}
+};
+
+object Bussgeld : CommandScript
+{
+	Bussgeld()
+	{
+		SetIcon("fahrzeug_kontrollieren");
+		SetCursor("fahrzeug_kontrollieren");
+		SetValidTargets(ACTOR_VEHICLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		if (v.HasCommand("erwischt"))
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		v.EnableBlinker(BLT_NONE);
+
+		if (v.GetUserData() > 1000)
+		{
+			int betrag = v.GetUserData() - 1000;
+		} else
+			int betrag = 0;
+
+		v.SetUserData(0);
+		int ausrasten = rand()%20;
+		Vector pos = v.GetPosition();
+		Game::FindFreePosition(Caller,pos);
+		Caller->PushActionMove(ACTION_NEWLIST,pos);
+		bool aussteigen = false;
+		if (betrag == 15)
+		{
+			Mission::PlayHint("Sie sind 10 km/h zu schnell gewesen, das macht 15 Euro!");
+		}
+		else if (betrag == 25)
+		{
+			Mission::PlayHint("Sie sind 15 km/h zu schnell gewesen, das macht 25 Euro!");
+		}
+		else if (betrag == 35)
+		{
+			Mission::PlayHint("Sie sind 20 km/h zu schnell gewesen, das macht 35 Euro!");
+		}
+		else if (betrag == 50)
+		{
+			Mission::PlayHint("Sie sind 75 km/h innerorts gefahren, das macht 50 Euro und einen Punkt!");
+		}
+		else if (betrag == 60)
+		{
+			Mission::PlayHint("Sie sind über 35 km/h zu schnell unterwegs gewesen, das kostet sie 60 Euro und zusätzlich 3 Punkte!");
+		}
+		else if (betrag == 100)
+		{
+			aussteigen = true;
+			Mission::PlayHint("Guten Tag, steigen sie bitte aus ihrem Fahrzeug aus, sie sind knapp 40 km/h zu schnell gefahren. Das macht 100 Euro Strafe, 3 Punkte und 1 Monat Fahrverbot!");
+		}
+		else if (betrag == 125)
+		{
+			aussteigen = true;
+			Mission::PlayHint("Das macht: 125 Euro, 4 Punkte und 1 Monat Fahrverbot. Bitte steigen sie aus!");
+		}
+		else if (betrag == 175)
+		{
+			aussteigen = true;
+			Mission::PlayHint("Das macht: 175 Euro, 4 Punkte und 2 Monate Fahrverbot. Bitte steigen sie aus!");
+		}
+		else if (betrag == 300)
+		{
+ 			aussteigen = true;
+			Mission::PlayHint("Sie wahren deutlich zu schnell unterwegs! Steigen sie sofort aus! Den Führerschein verlieren sie für 3 Monate, zusätzlich erhalten Sie 4 Punkte und 300 Euro Bussgeld!");
+		}
+		else if (betrag == 425)
+		{
+			aussteigen = true;
+			Mission::PlayHint("Sind sie lebensmüde? Sie haben den Jackpot mit 425 Euro + 3 Monate ohne Auto... und 4 Püncktchen in Flensburg! Aussteigen! Sofort!");
+		}
+		else
+		{
+			int kontrolle = rand()%15;
+			if ( kontrolle <7)
+			{
+				Mission::PlayHint("Alles in Ordnung. Ich wünsche Ihnen einen schönen Tag und eine angenehme Weiterfahrt!");
+			}
+			else if ( kontrolle  == 7)
+			{
+				Mission::PlayHint("Hmmm... Bitte lassen Sie ihr Rücklicht prüfen. Gute Fahrt!");
+			}
+			else if ( kontrolle  == 8)
+			{
+				Mission::PlayHint("Ihr TÜV ist abgelaufen. Das kostet Sie 40 Euro und sie bekommen 2 Punkte");
+				betrag = 40;
+			}
+			else if ( kontrolle  == 9)
+			{
+				Mission::PlayHint("Laut Atemalkoholtest haben Sie 0,8 Promille im Blut. Das kostet 250 Euro Strafe, 4 Punkte und 1 Monat Fahrverbot! Bitte aussteigen!");
+				betrag = 250;
+				aussteigen = true;
+			}
+			else if ( kontrolle  == 10)
+			{
+				Mission::PlayHint("Wir haben im Drogenschnelltest Cannabis festgestellt. Das kostet Sie 250 Euro, 4 Punkte und 1 Monat Fahrverbot. Bitte steigen Sie aus.");
+				aussteigen = true;
+				betrag = 500;
+			}
+			else if (kontrolle == 11)
+			{
+				Mission::PlayHint("Ihre letzte Abgasuntersuchung ist zu lange her. Das macht 15 Euro Strafe!");
+			}
+			else if (kontrolle == 12)
+			{
+				Mission::PlayHint("Wir haben Sie beobachtet, wie Sie telefoniert haben. Das macht 40 Euro und einen Punkt in Flensburg!");
+			}
+			else if ( kontrolle  == 13)
+			{
+				betrag = 1500;
+				aussteigen = true;
+				Mission::PlayHint("Steigen Sie sofort aus! Sie haben 3,6 Promille laut Atemalkoholtest!");
+			}
+			else if (kontrolle == 14)
+			{
+				Mission::PlayHint("In einem Monat läuft der TüV ab! Gute Fahrt!");
+			}
+			else if (kontrolle == 15)
+			{
+				Mission::PlayHint("Schöner Wagen, soetwas sieht man leider selten! Fahren sie immer vorsichtig damit... Gute Fahrt noch!");
+			}
+		}
+
+		if (aussteigen == true || ausrasten >17)
+		{
+			PersonList pl = v.GetPassengers();
+			for (int i=0; i<v.GetNumPassengers();i++)
+			{
+				Person p= pl.GetPerson(i);
+				p.Show();
+				p.PushActionLeaveCar(ACTION_NEWLIST,&v);
+				if ( ausrasten > 18)
+				{
+					p.SetBehaviour (BEHAVIOUR_GANGSTER_ATTACKALL);
+					p.SetRole(ROLE_GANGSTER);
+					if ((rand()%15) == 13)
+					{
+						p.SetEquipment (EQUIP_PISTOL);
+					}
+					if ((rand()%20) == 13)
+					{
+						p.SetEquipment (EQUIP_RIFLE);
+					}
+					if ((rand()%20) == 15)
+					{
+						p.SetEquipment (EQUIP_BOTTLE);
+					}
+				}
+			}
+			v.PushActionUsePath(ACTION_APPEND, "Abstellweg", 4.0f);
+			GameObject mDummy =  Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", "abstellort");
+                         if (Game::IsMultiplayer())
+                         {
+                         	mDummy.SetPlayerMP(Caller->GetPlayerMP());
+                         }
+			mDummy.Hide();
+			mDummy.SetPosition(pos);
+			Caller->PushActionEnterCar(ACTION_NEWLIST,&v);
+			mDummy.PushActionWait(ACTION_NEWLIST,10.0f);
+			mDummy.PushActionExecuteCommand(ACTION_APPEND,"parken",&v,1,false);
+			mDummy.PushActionWait(ACTION_APPEND,5.0f);
+			mDummy.PushActionDeleteOwner(ACTION_APPEND);
+		}
+		else
+		{
+			v.PushActionWait(ACTION_NEWLIST,5.0f);
+			int index = OldCivilPath.GetNearestPointIndex(v.GetPosition());
+			Vector target = OldCivilPath.GetPoint(index + 1);
+			v.PushActionMove(ACTION_APPEND, target);
+			v.PushActionUsePath(ACTION_APPEND, &OldCivilPath, true, 6.5f);
+		}
+		v.SetUserData(-2);
+		int mon = Mission::GetMoneyLeft();
+		Mission::SetMoney(mon + betrag);
+	}
+};
+
+object parken : CommandScript
+{
+	parken()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		ActorList lV_P4("P4_1");
+		Actor V_P4 = *lV_P4.GetActor(0);
+		Vector pos4 = V_P4.GetPosition();
+
+		PersonList PersList;
+
+		Vehicle v(Target);
+		PersList = v.GetPassengers();
+		for (int i=0; i < v.GetNumPassengers();i++)
+		{
+			v.PushActionLeaveCar(ACTION_NEWLIST,PersList.GetPerson(i));
+			Game::FindFreePosition(PersList.GetPerson(i),pos4);
+			PersList.GetPerson(i)->PushActionMove(ACTION_APPEND,pos4);
+		}
+	}
+};
+
+object erwischt : CommandScript
+{
+	erwischt()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};

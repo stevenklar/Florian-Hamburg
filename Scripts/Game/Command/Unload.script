@@ -1,0 +1,74 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* UNLOAD.SCRIPT - Script zum Abladen von Objekten                              */
+/*                                                                              */
+/* Dieses Commandscript regelt das Abladen von Objekten.		        */
+/*                                                                              */
+/* Original-Script: witchdoc			 				*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object Unload : CommandScript
+{
+	Unload()
+	{
+		SetIcon("drop");
+		SetCursor("drop");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(-10);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		if(!Caller->IsCarryingAnything())
+			return false;
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Target, 2, false);
+		Caller->PushActionUnload(ACTION_APPEND);
+	}
+};

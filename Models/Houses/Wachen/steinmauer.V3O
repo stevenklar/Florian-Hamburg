@@ -1,0 +1,95 @@
+[VNUM=1.43]
+// <OPTIONS>
+// Exporter: vMax
+// Version: 4, 0, 0, 0
+// AdvancedMenu: 1
+// DisplayWindow: 0
+// DisplayModelViewer: 0
+// SaveInFile: 1
+// TextureBehaviour: 0
+// TextureSubdir: 
+// TextureUseProjDir: 1
+// DisplayMemory: 0
+// ResizeMesh: 0
+// MeshFactor: 1.000000
+// CenterMethod: 0
+// ExportHidden: 0
+// ExportPatches: 0
+// ExportSmoothing: 1
+// LodBias: 0
+// OptimizeMesh: 1
+// EpsVert: 0.000000
+// EpsUV: 0.000000
+// MeshCheckMethod: 1113
+// ExportBones: 0
+// ExportBlended: 1
+// BlendThreshold: 0.000000
+// MaxNumBones: 4
+// RemoveBones: 1
+// BoneCheckMethod: 1110
+// ExportDoubleSided: 1
+// ExportOpacity: 1
+// ExportSpecularity: 1
+// ExportEnvironment: 1
+// ExportBump: 1
+// ExportReflectivity: 0
+// ResizeTextures: 1017
+// ExportStrips: 1
+// StripPerformance: 0
+// StripObject: 0
+// StripRestriction: 0
+// MaxStripSize: 0.000000
+// SetMaxStripLength: 0
+// MaxStripLength: 0
+// SetMinStripLength: 0
+// MinStripLength: 0
+// SetMinSegLength: 0
+// MinSegLength: 0
+// ProjectPath:  - No project -
+// Granularity: 0
+// NumAnimations: 0
+// </OPTIONS>
+
+
+[NUMSURFACES=1]
+[NUMVERTICES=20]
+[NUMBLENDVERTS=0]
+[NUMPOLYGONS=10]
+[NUMBONES=0]
+[NUMMUSCLEANIMS=0]
+[NUMMUSCLEFRAMES=0]
+
+SRF, tutwall01, 0, 0, 0, steinmauer.dds, 517, 0, 0, 0, , 0, 0, 0, 0, 0, 0, 0, 0
+D, 1629, -16530, -2078, 256, 0, 0, 18, 1009, 0, 0, 0, 0
+D, 1629, 16530, -2078, 256, 0, 0, 805, 1009, 0, 0, 0, 0
+D, -1629, -16530, -2078, -256, 0, 0, 18, 18, 0, 0, 0, 0
+D, -1629, 16530, -2078, 0, 256, 0, 978, 1009, 0, 0, 0, 0
+D, 1629, -16530, 18463, 0, 0, 256, 813, 223, 0, 0, 0, 0
+D, 1629, 16530, 18463, 0, 0, 256, 813, 1009, 0, 0, 0, 0
+D, -1629, -16530, 18463, 0, 0, 256, 890, 223, 0, 0, 0, 0
+D, -1629, 16530, 18463, 0, 0, 256, 890, 1009, 0, 0, 0, 0
+D, 1629, 16530, 18463, 256, 0, 0, 805, 520, 0, 0, 0, 6
+D, 1629, -16530, 18463, 256, 0, 0, 18, 520, 0, 0, 0, 5
+D, 1629, 16530, -2078, 0, 256, 0, 900, 1009, 0, 0, 0, 2
+D, -1629, 16530, 18463, 0, 256, 0, 978, 520, 0, 0, 0, 8
+D, 1629, 16530, 18463, 0, 256, 0, 900, 520, 0, 0, 0, 6
+D, -1629, 16530, -2078, -256, 0, 0, 805, 18, 0, 0, 0, 4
+D, -1629, -16530, 18463, -256, 0, 0, 18, 507, 0, 0, 0, 7
+D, -1629, 16530, 18463, -256, 0, 0, 805, 507, 0, 0, 0, 8
+D, -1629, -16530, -2078, 0, -256, 0, 901, 1009, 0, 0, 0, 3
+D, 1629, -16530, -2078, 0, -256, 0, 978, 1009, 0, 0, 0, 1
+D, 1629, -16530, 18463, 0, -256, 0, 978, 520, 0, 0, 0, 5
+D, -1629, -16530, 18463, 0, -256, 0, 901, 520, 0, 0, 0, 7
+P, 3, 5, 6, 8, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 8, 7, 5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 1, 2, 9, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 9, 10, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 11, 4, 12, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 12, 13, 11, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 14, 3, 15, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 15, 16, 14, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 17, 18, 19, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 19, 20, 17, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+BOX, -17, -166, -21, 17, 166, 185
+N, 0, 0, 0, 248
+CBOX, -16.296, -165.301, -20.781, 16.296, 165.301, 184.640

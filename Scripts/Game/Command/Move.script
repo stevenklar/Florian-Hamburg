@@ -1,0 +1,144 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* MOVE.SCRIPT - Script zum Bewegen von Fahrzeugen und Personen                 */
+/*                                                                              */
+/* Dieses Commandscript regelt das Bewegen von Fahrzeugen und/oder Personen.    */
+/*                                                                              */
+/* Original-Script: Emergency 4 Sixteen Tons					*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 06.01.2008, SM,   Prüfung, ob Fahrzeug ein Polizeifahrzeug ist, und falls    */
+/*		     ja, und es befand sich auf Streife, dann normale           */
+/*		     Geschwindigkeit wiederherstellen.                          */
+/* 06.07.2008, SM,   Haspeln werden jetzt abgenommen und draufgesetzt.          */
+/*                                                                              */
+/* **************************************************************************** */
+
+const char DUMMY_DISABLE[] = "DUMMYDisableSiren";
+
+object MoveTo : CommandScript
+{
+	MoveResult mr;
+
+	MoveTo()
+	{
+		SetValidTargets(ACTOR_FLOOR | ACTOR_OBJECT | ACTOR_VIRTUAL | ACTOR_HOUSE | ACTOR_OPEN_HOUSE);
+		SetHighlightingEnabled(false);
+		SetDeselectCaller(false);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		mr = Commands::CheckMoveConditions(Caller, Target, childID);
+		if (mr.Mode == MOVE_ABORT)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->AssignCommand("ich_bin_nicht_frei");
+		Vehicle Fz(Caller);
+		Fz.SetChildEnabled("haspel_racked", true);
+		Fz.SetChildEnabled("haspel_floor", false);
+		Fz.SetChildEnabled("stuetzen", false);
+		if (mr.Mode == MOVE_ABORT)
+			return;
+
+		switch(mr.Mode)
+		{
+			case MOVE_TO_POSITION:
+			{
+				if (Caller->GetFirehoseID() > 0)
+				{
+					Caller->PushActionMoveWithHose(ACTION_NEWLIST, mr.Target);
+					return;
+				}
+
+				if (Caller->HasCommand("DummyHasOpenSpecialDoors"))
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "VCmdCloseSpecialDoor", Caller, 0, false);
+					Caller->PushActionWait(ACTION_APPEND, 3);
+					Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+					Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 2, false);
+				}
+				else
+				{
+					Caller->PushActionMove(ACTION_NEWLIST, mr.Target, true);
+					Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 2, false);
+				}
+				break;
+			}
+
+			case MOVE_INTO_HOUSE:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionEnterHouse(ACTION_APPEND, &mr.EnterHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+
+			case MOVE_HOUSE_TO_HOUSE:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(ACTION_APPEND, &mr.LeaveHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Intermediate2, true);
+				Caller->PushActionEnterHouse(ACTION_APPEND, &mr.EnterHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+
+			case MOVE_HOUSE_TO_POSITION:
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, mr.Intermediate1, true);
+				Caller->PushActionLeaveHouse(ACTION_APPEND, &mr.LeaveHouse);
+				Caller->PushActionMove(ACTION_APPEND, mr.Target, true);
+				break;
+			}
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+
+			if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2") || Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+			{
+				v.RemoveObjectPath();
+				v.SetSpeed(13.0.f);
+			}
+			if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+			{
+				v.RemoveObjectPath();
+				v.SetSpeed(13.0.f);
+			}
+		}
+
+
+		if (mr.UnInstall)
+		{
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_THW_FGRR_BKF)
+			{
+				Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+
+			else if (v.GetVehicleType() == VT_FIREFIGHTERS_DLK)
+			{
+				if (mr.BasketDown && mr.UnInstall)
+				{
+					Caller->PushActionDeinstall(ACTION_INSERT);
+					Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				}
+				else if (mr.BasketDown)
+				     	Caller->PushActionBasketDown(ACTION_INSERT, Vector(0.f, 0.f, 0.f));
+				else if (mr.UnInstall)
+				     	Caller->PushActionDeinstall(ACTION_INSERT);
+			}
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_DISABLE, Caller, 2, false);
+	}
+};

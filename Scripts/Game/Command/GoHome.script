@@ -1,0 +1,1657 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* GOHOME.SCRIPT - Script zum Heimschicken und Einparken von Fahrzeugen         */
+/*                                                                              */
+/* Dieses Commandscript regelt das Aufsitzen von Einsatzkräften, das 		*/
+/* Zurückschicken von Fahrzeugen zur Wache sowie das Einparken in der Halle.	*/
+/* Weiterhin enthält es auch das Emergency-Standard-GoHome-Kommando für den	*/
+/* Missionsmodus und diverse Prüfungen nach dem Einparken zum Beispiel das	*/
+/* Abliefern eines Täters an der Polizeiwache, das Ausblenden von Fahrzeugen    */
+/* von ausserhalb und vieles mehr.						*/
+/*                                                                              */
+/* Original-Script: Emergency 4 Sixteen Tons					*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 13.08.2008, SM,   Initial-Version                                            */
+/* 16.11.2008, SM,   Bug behoben, dass die Fahrzeuge der FF teilweise schon vor */
+/* 		     dem einparken nicht mehr bewegbar waren.                   */
+/* 07.12.2008, SM,   RTH kommt jetzt von ausserhalb.				*/
+/*                                                                              */
+/* **************************************************************************** */
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: STANDARD EM4 GOHOME-COMMAND:
+
+object GoHome : CommandScript
+{
+	bool deinstall;
+
+	GoHome()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+		if (Caller->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Caller);
+			if (/*v.HasTransportOnStretcher() || */ v.IsDecontaminating())
+				return false;
+			if (v.IsInstalled())
+			{
+				if (v.GetVehicleType() == VT_THW_FGRR_BKF && (!v.IsReady() || v.GetCarriedObjects().GetNumObjects()>0))
+					return false;
+				if (v.GetVehicleType() == VT_FIREFIGHTERS_DLK && /*(v.GetInstallTargetID() != -1 ||*/ v.IsUplifting())//)
+					return false;
+				if (v.GetVehicleType() == VT_FIREFIGHTERS_GTF)
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		deinstall = false;
+		Vehicle v(Caller);
+		SetPriority(0);
+		if ((v.GetVehicleType() == VT_AMBULANCE_RTW || v.GetVehicleType() == VT_AMBULANCE_ITW || v.GetVehicleType() == VT_AMBULANCE_RHC) && v.GetNumTransported() > 0)
+			SetPriority(105);
+		if (v.IsInstalled())
+		{
+			if (v.GetVehicleType() == VT_THW_FGRR_BKF && (!v.IsReady() || v.GetCarriedObjects().GetNumObjects()>0))
+				return false;
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_DLK && /*(v.GetInstallTargetID() != -1 ||*/ v.IsUplifting())//)
+				return false;
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_GTF)
+				return false;
+			deinstall = true;
+		}
+
+		if (v.IsDecontaminating())
+		   	return false;
+
+		return true;
+	}
+
+void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+		if (v.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			v.EnableBlueLights(false);
+			bool SoSiAnschalten = false;
+
+			//Patient an Bord?
+			PersonList l3 = v.GetTransports();
+			if (l3.GetNumPersons() > 0)
+			{
+			//Notarzt an Board? -> Sondersignal
+	   		PersonList l2 = v.GetPassengers();
+			for(int i=0; i<l2.GetNumPersons(); i++)
+			{
+				if (l2.GetPerson(i)->HasCommand("heal"))
+					SoSiAnschalten = true;
+			}
+
+	   		//Patient mit LE < 600 && > 0 -> Sondersignal
+			for(int i=0; i<l3.GetNumPersons(); i++)
+			{
+				if (l3.GetPerson(i)->GetLife() <= 600 && l3.GetPerson(i)->GetLife() > 0)
+					SoSiAnschalten = true;
+			}
+
+		}
+		if (SoSiAnschalten == true)
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdSiren", Caller, 0, false);
+		}
+		}
+
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList liste = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < liste.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			GameObjectList liste2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < liste2.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+		}
+
+
+
+		v.EnableTrafficLight(TLT_NONE);
+
+
+		if (!deinstall)
+		{
+
+			if (v.IsLightOn())
+			{
+				Caller->PushActionLightOn(ACTION_APPEND, false);
+				Caller->PushActionReturnToBase(ACTION_APPEND);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 1, false);
+				return;
+			}
+
+			if (v.GetVehicleType() == VT_THW_FGRT_BH && v.HasTransportOnStretcher())
+			{
+				ScriptInterface::ShowMessageTickerTextForSinglePlayer(Caller, "HINT_FGRT_NOBACKTOBASE");
+				return;
+
+			}
+
+			Caller->PushActionReturnToBase(ACTION_APPEND);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 1, false);
+		} else
+		  {
+			Vehicle v(Caller);
+			if (v.GetVehicleType() == VT_FIREFIGHTERS_DLK && v.IsUplifted())
+			{
+				Caller->PushActionBasketDown(ACTION_APPEND, Vector(0.f, 0.f, 0.f));
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->PushActionReturnToBase(ACTION_APPEND);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 1, false);
+			} else
+			  {
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->PushActionReturnToBase(ACTION_APPEND);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 1, false);
+			  }
+		  }
+	}
+
+};
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: AUTOMATISCHES HEIMFAHREN UND EINPARKEN AUSRICHTUNG NORD:
+
+
+object gohome_rth : CommandScript
+{
+	Vector Wache;
+	Actor fz;
+
+	gohome_rth()
+	{
+		SetCursor("aufsitzen");
+		SetIcon("aufsitzen");
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPriority(85);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		if (Game::IsFreeplay() || Game::IsMultiplayer())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		PersonList Patienten = v.GetTransports();
+		if (Patienten.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 113, false);
+			return;
+		}
+
+		ActorList l1(Target->GetName());
+		if(l1.GetNumActors() > 0)
+		{
+			fz = *l1.GetActor(0);
+		}
+		else
+		{
+			System::Error("GOHOME_RTH: Standort nicht gefunden!");
+		}
+
+		Wache=fz.GetPosition();
+
+		Caller->RemoveCommand("ich_bin_nicht_frei");
+		Game::FindFreePosition(Caller, Wache);
+		Caller->PushActionFlyTo(ACTION_NEWLIST, Wache, false, -1.0f);
+
+		GameObject obj(Target);
+		float landingDirection = v.GetValidLandingAngle(&obj, Wache);
+
+		Caller->PushActionFlyTo(ACTION_NEWLIST, Wache, true, landingDirection);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+	}
+};
+
+
+
+
+
+object goHome_nord : CommandScript
+{
+	goHome_nord()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("aufsitzen");
+		SetCursor("aufsitzen");
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+               if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+               return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		const int MAX_CHARS = 20;
+		const char *Name2[MAX_CHARS];
+		const char *Name3[MAX_CHARS];
+
+		Vehicle v(Caller);
+
+		VehicleType vt=v.GetVehicleType();
+		switch (vt)
+		{
+			case VT_AMBULANCE_NEF:
+				bool NAanBord=false;
+	   			PersonList l2 = v.GetPassengers();
+				for(int i=0; i<l2.GetNumPersons(); i++)
+				{
+					if (l2.GetPerson(i)->HasCommand("ich_bin_ein_notarzt"))
+					{
+						NAanBord = true;
+					}
+				}
+				if (!NAanBord)
+				{
+					VehicleList nefs(l2.GetPerson(i)->GetName());
+					Vehicle nef;
+					nef=nefs.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					nef.PushActionExecuteCommand(ACTION_NEWLIST,"NEF_zum_Krankenhaus",&nef,1,false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RTW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 115, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_ITW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "gohome_grtw", Caller, 113, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RHC:
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST, "gohome_rth", Caller, 0, false);
+				return;
+		}
+
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2") || Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+
+		if (v.HasCommand("ich_bin_ein_asf") && v.IsCarryingAnything())
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST, "ActionCheckASF", Caller, 0, true);
+			return;
+		}
+
+
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF && v.IsInstalled())
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList liste = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < liste.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			GameObjectList liste2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < liste2.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+		}
+
+
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		v.EnableTrafficLight(TLT_NONE);
+
+		if (Caller->HasCommand("schnellangriff_aktiviert"))
+			Caller->RemoveCommand("schnellangriff_aktiviert");
+
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+
+		const char *V2Name = v.GetName();
+		snprintf(Name2, MAX_CHARS, "%sb", V2Name);
+		int LessOne = MAX_CHARS - 1;
+		Name2[LessOne] = '\0';
+
+		const char *V1Name = Name2;
+
+		ActorList list1, list2;
+			list1 = Game::GetActors(V1Name);
+			list2 = Game::GetActors(V2Name);
+
+		Actor ParkingVobj2 = *list2.GetActor(0);
+		for(int i = 0; i < list1.GetNumActors(); i++)
+		{
+			if (list1.GetActor(i)->GetType() == ACTOR_VIRTUAL)
+			{
+				Actor ParkingVobj1 = *list1.GetActor(i);
+			}
+		}
+
+		Vector VobjPos1 = ParkingVobj1.GetPosition();
+		Vector VobjPos2 = ParkingVobj2.GetPosition();
+
+
+
+		//ZUFALLSEINSÄTZE GENERIEREN
+		Game::ExecuteCommand("Zufallseinsatz",Caller);
+
+
+
+		Game::FindFreePosition(Caller, VobjPos1);
+		Game::FindFreePosition(Caller, VobjPos2);
+
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+
+		Caller->PushActionMove(ACTION_APPEND, VobjPos1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"OpenGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, VobjPos1+Vector(0,+300,0));
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos2, true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionLightOn(ACTION_APPEND, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Reset_AlarmStatus",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+
+		if (Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Nord",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Sued",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Mitte",&v,0,true);
+			return;
+		}
+
+	}
+};
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: AUTOMATISCHES HEIMFAHREN UND EINPARKEN AUSRICHTUNG SÜD:
+
+object goHome_sued : CommandScript
+{
+	goHome_sued()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("aufsitzen");
+		SetCursor("aufsitzen");
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+               if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+               return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		const int MAX_CHARS = 20;
+		const char *Name2[MAX_CHARS];
+		const char *Name3[MAX_CHARS];
+
+		Vehicle v(Caller);
+
+		VehicleType vt=v.GetVehicleType();
+		switch (vt)
+		{
+			case VT_AMBULANCE_NEF:
+				bool NAanBord=false;
+	   			PersonList l2 = v.GetPassengers();
+				for(int i=0; i<l2.GetNumPersons(); i++)
+				{
+					if (l2.GetPerson(i)->HasCommand("ich_bin_ein_notarzt"))
+					{
+						NAanBord = true;
+					}
+				}
+				if (!NAanBord)
+				{
+					VehicleList nefs(l2.GetPerson(i)->GetName());
+					Vehicle nef;
+					nef=nefs.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					nef.PushActionExecuteCommand(ACTION_NEWLIST,"NEF_zum_Krankenhaus",&nef,1,false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RTW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 114, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_ITW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "gohome_grtw", Caller, 114, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RHC:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 114, false);
+					return;
+				}
+				break;
+		}
+
+
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2") || Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF && v.IsInstalled())
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList liste = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < liste.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			GameObjectList liste2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < liste2.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+		}
+
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		v.EnableTrafficLight(TLT_NONE);
+
+		if (Caller->HasCommand("schnellangriff_aktiviert"))
+			Caller->RemoveCommand("schnellangriff_aktiviert");
+
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+		const char *V2Name = v.GetName();
+		snprintf(Name2, MAX_CHARS, "%sb", V2Name);
+		int LessOne = MAX_CHARS - 1;
+		Name2[LessOne] = '\0';
+
+		const char *V1Name = Name2;
+
+		ActorList list1, list2;
+			list1 = Game::GetActors(V1Name);
+			list2 = Game::GetActors(V2Name);
+
+		Actor ParkingVobj2 = *list2.GetActor(0);
+		for(int i = 0; i < list1.GetNumActors(); i++)
+		{
+			if (list1.GetActor(i)->GetType() == ACTOR_VIRTUAL)
+			{
+				Actor ParkingVobj1 = *list1.GetActor(i);
+			}
+		}
+
+		Vector VobjPos1 = ParkingVobj1.GetPosition();
+		Vector VobjPos2 = ParkingVobj2.GetPosition();
+
+
+
+		//ZUFALLSEINSÄTZE GENERIEREN
+		Game::ExecuteCommand("Zufallseinsatz",Caller);
+
+
+
+		Game::FindFreePosition(Caller, VobjPos1);
+		Game::FindFreePosition(Caller, VobjPos2);
+
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+
+		Caller->PushActionMove(ACTION_APPEND, VobjPos1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"OpenGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, VobjPos1+Vector(0,-300,0));
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos2, true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionLightOn(ACTION_APPEND, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Reset_AlarmStatus",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+
+		//FF-ALARMIERUNGSSTATUS ZURÜCKSETZEN
+		if (Caller->HasName("f3917_hlf1") || Caller->HasName("f3917_hlf2"))
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "AlarmFF", Caller, 1, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "AlarmFF", Caller, 2, false);
+		}
+
+
+
+		if (Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Nord",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Sued",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Mitte",&v,0,true);
+			return;
+		}
+	}
+};
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: AUTOMATISCHES HEIMFAHREN UND EINPARKEN AUSRICHTUNG WEST:
+
+object goHome_west : CommandScript
+{
+	goHome_west()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("aufsitzen");
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+               if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+               return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		const int MAX_CHARS = 20;
+		const char *Name2[MAX_CHARS];
+		const char *Name3[MAX_CHARS];
+
+		Vehicle v(Caller);
+
+		VehicleType vt=v.GetVehicleType();
+		switch (vt)
+		{
+			case VT_AMBULANCE_NEF:
+				bool NAanBord=false;
+	   			PersonList l2 = v.GetPassengers();
+				for(int i=0; i<l2.GetNumPersons(); i++)
+				{
+					if (l2.GetPerson(i)->HasCommand("ich_bin_ein_notarzt"))
+					{
+						NAanBord = true;
+					}
+				}
+				if (!NAanBord)
+				{
+					VehicleList nefs(l2.GetPerson(i)->GetName());
+					Vehicle nef;
+					nef=nefs.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					nef.PushActionExecuteCommand(ACTION_NEWLIST,"NEF_zum_Krankenhaus",&nef,1,false);
+					return;
+				}
+				break;
+			case VT_AMBULANCE_RTW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 115, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_ITW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "gohome_grtw", Caller, 116, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RHC:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 116, false);
+					return;
+				}
+				break;
+		}
+
+
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2") || Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+
+
+
+
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF && v.IsInstalled())
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList liste = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < liste.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			GameObjectList liste2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < liste2.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+		}
+
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		v.EnableTrafficLight(TLT_NONE);
+
+		if (Caller->HasCommand("schnellangriff_aktiviert"))
+			Caller->RemoveCommand("schnellangriff_aktiviert");
+
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+		const char *V2Name = v.GetName();
+		snprintf(Name2, MAX_CHARS, "%sb", V2Name);
+		int LessOne = MAX_CHARS - 1;
+		Name2[LessOne] = '\0';
+
+		const char *V1Name = Name2;
+
+		ActorList list1, list2;
+			list1 = Game::GetActors(V1Name);
+			list2 = Game::GetActors(V2Name);
+
+		Actor ParkingVobj2 = *list2.GetActor(0);
+		for(int i = 0; i < list1.GetNumActors(); i++)
+		{
+			if (list1.GetActor(i)->GetType() == ACTOR_VIRTUAL)
+			{
+				Actor ParkingVobj1 = *list1.GetActor(i);
+			}
+		}
+
+		Vector VobjPos1 = ParkingVobj1.GetPosition();
+		Vector VobjPos2 = ParkingVobj2.GetPosition();
+
+
+
+		//ZUFALLSEINSÄTZE GENERIEREN
+		Game::ExecuteCommand("Zufallseinsatz",Caller);
+
+
+
+		Game::FindFreePosition(Caller, VobjPos1);
+		Game::FindFreePosition(Caller, VobjPos2);
+
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+
+		Caller->PushActionMove(ACTION_APPEND, VobjPos1, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"OpenGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, VobjPos1+Vector(-300,0,0));
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos2, true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionLightOn(ACTION_APPEND, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Reset_AlarmStatus",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+
+
+
+		if (Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Nord",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Sued",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Mitte",&v,0,true);
+			return;
+		}
+	}
+};
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: AUTOMATISCHES HEIMFAHREN UND EINPARKEN AUSRICHTUNG OST:
+
+object goHome_ost : CommandScript
+{
+	goHome_ost()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("aufsitzen");
+		SetCursor("aufsitzen");
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+               if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+               return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		const int MAX_CHARS = 20;
+		const char *Name2[MAX_CHARS];
+		const char *Name3[MAX_CHARS];
+
+		Vehicle v(Caller);
+
+		VehicleType vt=v.GetVehicleType();
+		switch (vt)
+		{
+			case VT_AMBULANCE_NEF:
+				bool NAanBord=false;
+	   			PersonList l2 = v.GetPassengers();
+				for(int i=0; i<l2.GetNumPersons(); i++)
+				{
+					if (l2.GetPerson(i)->HasCommand("ich_bin_ein_notarzt"))
+					{
+						NAanBord = true;
+					}
+				}
+				if (!NAanBord)
+				{
+					VehicleList nefs(l2.GetPerson(i)->GetName());
+					Vehicle nef;
+					nef=nefs.GetVehicle(0);
+					nef.PushActionWait(ACTION_NEWLIST,1.0f);
+					nef.PushActionExecuteCommand(ACTION_NEWLIST,"NEF_zum_Krankenhaus",&nef,1,false);
+					return;
+				}
+				break;
+			case VT_AMBULANCE_RTW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 115, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_ITW:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "gohome_grtw", Caller, 115, false);
+					return;
+				}
+				break;
+
+			case VT_AMBULANCE_RHC:
+				PersonList Patienten = v.GetTransports();
+				if (Patienten.GetNumPersons() > 0)
+				{
+					Caller->PushActionExecuteCommand(ACTION_NEWLIST, "zum_krankenhaus", Caller, 115, false);
+					return;
+				}
+				break;
+		}
+
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2") || Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			v.RemoveObjectPath();
+			v.SetSpeed(13.0.f);
+		}
+
+
+
+
+		if (v.GetVehicleType() == VT_THW_FGRR_BKF && v.IsInstalled())
+		{
+			Caller->PushActionDeinstall(ACTION_INSERT);
+		}
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList liste = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < liste.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			GameObjectList liste2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < liste2.GetNumObjects(); i++)
+			{
+				GameObject *obj = liste2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+		}
+
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		v.EnableTrafficLight(TLT_NONE);
+
+		if (Caller->HasCommand("schnellangriff_aktiviert"))
+			Caller->RemoveCommand("schnellangriff_aktiviert");
+
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+		const char *V2Name = v.GetName();
+		snprintf(Name2, MAX_CHARS, "%sb", V2Name);
+		int LessOne = MAX_CHARS - 1;
+		Name2[LessOne] = '\0';
+
+		const char *V1Name = Name2;
+
+		ActorList list1, list2;
+			list1 = Game::GetActors(V1Name);
+			list2 = Game::GetActors(V2Name);
+
+		Actor ParkingVobj2 = *list2.GetActor(0);
+		for(int i = 0; i < list1.GetNumActors(); i++)
+		{
+			if (list1.GetActor(i)->GetType() == ACTOR_VIRTUAL)
+			{
+				Actor ParkingVobj1 = *list1.GetActor(i);
+			}
+		}
+
+		Vector VobjPos1 = ParkingVobj1.GetPosition();
+		Vector VobjPos2 = ParkingVobj2.GetPosition();
+
+
+
+		//ZUFALLSEINSÄTZE GENERIEREN
+		Game::ExecuteCommand("Zufallseinsatz",Caller);
+
+
+
+		Game::FindFreePosition(Caller, VobjPos1);
+		Game::FindFreePosition(Caller, VobjPos2);
+
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+		Caller->EnableTrafficLight(TLT_NONE);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos1, false);
+		Caller->PushActionLightOn(ACTION_APPEND, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"OpenGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, VobjPos1+Vector(+300,0,0));
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos2, true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Reset_AlarmStatus",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+
+
+		if (Caller->HasName("pol_nord_stw3") || Caller->HasName("pol_nord_stw4") || Caller->HasName("pol_nord_mtw1") || Caller->HasName("pol_nord_kripo1") || Caller->HasName("pol_nord_kripo2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Nord",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_sued_stw1") || Caller->HasName("pol_sued_stw2") || Caller->HasName("pol_sued_stw3"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Sued",&v,0,true);
+			return;
+		}
+		if (Caller->HasName("pol_nord_stw1") || Caller->HasName("pol_nord_stw2"))
+		{
+			Vehicle v(Target);
+			PersonList transport = v.GetTransports();
+			if (transport.GetNumPersons() != 0)
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Mitte",&v,0,true);
+			return;
+		}
+	}
+};
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: PRÜFUNG NACH TÄTERN IM POLIZEIFAHRZEUG UND ABLIEFERN AN DER WACHE:
+
+object ActionCheckPol_Nord : CommandScript
+{
+
+	ActionCheckPol_Nord()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		PersonList transport = v.GetTransports();
+
+		if (transport.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionEmptyPol_Nord",&v,0,false);
+			Caller->PushActionWait(ACTION_APPEND, 10.f); //bis zum nächsten Durchlauf
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Nord",&v,0,false);
+		}
+		else
+		{
+		}
+
+
+	}
+};
+
+object ActionEmptyPol_Nord : CommandScript
+{
+	Vector tv,v;
+
+	ActionEmptyPol_Nord()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("polizei_entry");
+        	if (mPlaceList.GetNumActors() > 0)
+        		tv=mPlaceList.GetActor(0)->GetPosition();
+
+		Vehicle v(Caller);
+		PersonList passenger = v.GetPassengers();
+		PersonList transport = v.GetTransports();
+
+		if (passenger.GetNumPersons() > 0 && transport.GetNumPersons() > 0)
+		{
+			//Gangster
+			transport.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			transport.GetPerson(0)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+			transport.GetPerson(0)->PushActionWait(ACTION_APPEND, 5.f);
+
+			//Polizist
+			passenger.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, transport.GetPerson(0), TARGET_FOLLOW);
+			passenger.GetPerson(0)->PushActionArrest(ACTION_APPEND, transport.GetPerson(0), false);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, tv, true);
+			passenger.GetPerson(0)->PushActionPutInBase(ACTION_APPEND);
+			passenger.GetPerson(0)->PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true);
+		}
+		else
+		{
+			return;
+		}
+
+
+	}
+};
+
+object ActionCheckPol_Sued : CommandScript
+{
+
+	ActionCheckPol_Sued()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		PersonList transport = v.GetTransports();
+
+		if (transport.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionEmptyPol_Sued",&v,0,false);
+			Caller->PushActionWait(ACTION_APPEND, 10.f); //bis zum nächsten Durchlauf
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Sued",&v,0,false);
+		}
+		else
+		{
+		}
+
+
+	}
+};
+
+object ActionEmptyPol_Sued : CommandScript
+{
+	Vector tv,v;
+
+	ActionEmptyPol_Sued()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("polizei_sued_entry");
+        	if (mPlaceList.GetNumActors() > 0)
+        		tv=mPlaceList.GetActor(0)->GetPosition();
+
+		Vehicle v(Caller);
+		PersonList passenger = v.GetPassengers();
+		PersonList transport = v.GetTransports();
+
+		if (passenger.GetNumPersons() > 0 && transport.GetNumPersons() > 0)
+		{
+			//Gangster
+			transport.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			transport.GetPerson(0)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+			transport.GetPerson(0)->PushActionWait(ACTION_APPEND, 5.f);
+
+			//Polizist
+			passenger.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, transport.GetPerson(0), TARGET_FOLLOW);
+			passenger.GetPerson(0)->PushActionArrest(ACTION_APPEND, transport.GetPerson(0), false);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, tv, true);
+			passenger.GetPerson(0)->PushActionPutInBase(ACTION_APPEND);
+			passenger.GetPerson(0)->PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true);
+		}
+		else
+		{
+			return;
+		}
+	}
+};
+
+object ActionCheckPol_Mitte : CommandScript
+{
+
+	ActionCheckPol_Mitte()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+		PersonList transport = v.GetTransports();
+
+		if (transport.GetNumPersons() > 0)
+		{
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"ActionEmptyPol_Mitte",&v,0,false);
+			Caller->PushActionWait(ACTION_APPEND, 10.f); //bis zum nächsten Durchlauf
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ActionCheckPol_Mitte",&v,0,false);
+		}
+		else
+		{
+		}
+
+
+	}
+};
+
+object ActionEmptyPol_Mitte : CommandScript
+{
+	Vector tv,v;
+
+	ActionEmptyPol_Mitte()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		ActorList mPlaceList;
+        	mPlaceList = Game::GetActors("polizei_mitte_entry");
+        	if (mPlaceList.GetNumActors() > 0)
+        		tv=mPlaceList.GetActor(0)->GetPosition();
+
+		Vehicle v(Caller);
+		PersonList passenger = v.GetPassengers();
+		PersonList transport = v.GetTransports();
+
+		if (passenger.GetNumPersons() > 0 && transport.GetNumPersons() > 0)
+		{
+			//Gangster
+			transport.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			transport.GetPerson(0)->SetBehaviour(BEHAVIOUR_GANGSTER_CIVILUNARMED);
+			transport.GetPerson(0)->PushActionWait(ACTION_APPEND, 5.f);
+
+			//Polizist
+			passenger.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, &v);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, transport.GetPerson(0), TARGET_FOLLOW);
+			passenger.GetPerson(0)->PushActionArrest(ACTION_APPEND, transport.GetPerson(0), false);
+			passenger.GetPerson(0)->PushActionMove(ACTION_APPEND, tv, true);
+			passenger.GetPerson(0)->PushActionPutInBase(ACTION_APPEND);
+			passenger.GetPerson(0)->PushActionExecuteCommand(ACTION_APPEND,"entercar",Target,0,true);
+		}
+		else
+		{
+			return;
+		}
+	}
+};
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: FAHRZEUGE VON AUSSERHALB AUSBLENDEN:
+
+object FahrzeugAusblenden : CommandScript
+{
+	FahrzeugAusblenden()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Caller);
+
+		if (v.HasCommand("f14_nef") || v.HasCommand("bwk_nef") || v.HasCommand("rth_chr29") || v.HasCommand("thw_elw1") || v.HasCommand("thw_mlw1"))
+		{
+			v.Hide();
+		}
+		if (v.HasCommand("thw_unimog1") || v.HasCommand("asb_rtw1") || v.HasCommand("asb_rtw2") || v.HasCommand("asb_rtw3"))
+		{
+			v.Hide();
+		}
+		if (v.HasCommand("f32_udienst") || v.HasCommand("f32_kmrd") || v.HasCommand("f32_kran") || v.HasCommand("f32_wlf_dekon"))
+		{
+			v.Hide();
+		}
+		if (v.HasCommand("entstoerdienst") || v.HasCommand("bestatter") || v.HasCommand("f25_segt") || v.HasCommand("vattenfall"))
+		{
+			v.Hide();
+		}
+	}
+};
+
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: ABSCHLEPPFAHRZEUG:
+
+object ActionCheckASF : CommandScript
+{
+	ActionCheckASF()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vector schrott;
+		Actor schrottplatz;
+		Vehicle v(Caller);
+		ActorList l1;
+		if (Game::IsFreeplay() || Game::IsMultiplayer())
+		{
+			l1=Game::GetActors("schrottplatz");
+			if(l1.GetNumActors() > 0)
+			{
+				schrottplatz = *l1.GetActor(0);
+				Mission::PlayHint("Fahrzeug wird zum Schrottplatz gebracht!");
+			}
+			else
+			{
+				System::Error("Streife CommandScript: Kann Schrottplatz nicht finden!");
+			}
+
+			schrott=schrottplatz.GetPosition();
+			Game::FindFreePosition(Caller,schrott);
+			v.EnableBlueLights(true);
+			Caller->PushActionMove(ACTION_APPEND, schrott+Vector(0,+150,0), false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller,1, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+			Caller->PushActionTurnTo(ACTION_APPEND, schrott+Vector(0,+300,0));
+			Caller->PushActionMove(ACTION_APPEND, schrott);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ASF_Unload",Caller);
+		} else
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"GoHome",Caller,0,true);
+		}
+	}
+};
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////// BLOCK: F-12 GRTW:
+
+object goHome_grtw : CommandScript
+{
+	goHome_grtw()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetIcon("aufsitzen");
+		SetCursor("aufsitzen");
+		SetPriority(85);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+               if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+               return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		const int MAX_CHARS = 20;
+		const char *Name2[MAX_CHARS];
+		const char *Name3[MAX_CHARS];
+
+		Vehicle v(Caller);
+
+		if (v.GetBlinkerStatus() == BLT_BOTH)
+		{
+ 			v.EnableBlinker(BLT_NONE);
+		}
+		if (v.IsSpecialLightEnabled())
+		{
+ 			v.EnableSpecialLights(false);
+			v.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+		}
+
+		Vehicle v(Caller);
+	        PersonList persons = v.GetTransports();
+	        if (persons.GetNumPersons() > 0)
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND, "zum_krankenhaus_grtw", Caller, 0, true);
+			return;
+		}
+
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		v.EnableTrafficLight(TLT_NONE);
+		Caller->PushActionExecuteCommand(ACTION_NEWLIST, "DUMMYDisableSiren", Caller, 1, false);
+		v.RemoveCommand("ich_bin_nicht_frei");
+		Audio::PlaySample("mod:/Audio/FX/voices/hints/funkfrei.wav");
+
+		v.SetChildEnabled("haspel_racked", true);
+		v.SetChildEnabled("haspel_floor", false);
+
+		const char *V2Name = v.GetName();
+		snprintf(Name2, MAX_CHARS, "%sb", V2Name);
+		int LessOne = MAX_CHARS - 1;
+		Name2[LessOne] = '\0';
+
+		const char *V1Name = Name2;
+
+		ActorList list1, list2;
+			list1 = Game::GetActors(V1Name);
+			list2 = Game::GetActors(V2Name);
+
+		Actor ParkingVobj2 = *list2.GetActor(0);
+		for(int i = 0; i < list1.GetNumActors(); i++)
+		{
+			if (list1.GetActor(i)->GetType() == ACTOR_VIRTUAL)
+			{
+				Actor ParkingVobj1 = *list1.GetActor(i);
+			}
+		}
+
+		Vector VobjPos1 = ParkingVobj1.GetPosition();
+		Vector VobjPos2 = ParkingVobj2.GetPosition();
+
+
+
+		//ZUFALLSEINSÄTZE GENERIEREN
+		Game::ExecuteCommand("Zufallseinsatz",Caller);
+
+
+
+		Game::FindFreePosition(Caller, VobjPos1);
+		Game::FindFreePosition(Caller, VobjPos2);
+
+		Caller->PushActionLightOn(ACTION_APPEND,true);
+
+		Caller->PushActionMove(ACTION_APPEND, VobjPos1, true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"OpenGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+		Caller->PushActionTurnTo(ACTION_APPEND, VobjPos1+Vector(0,-300,0));
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionMove(ACTION_APPEND, VobjPos2, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionLightOn(ACTION_APPEND, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"Reset_AlarmStatus",Caller,0,true);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"FahrzeugAusblenden",Caller,0,true);
+	}
+};

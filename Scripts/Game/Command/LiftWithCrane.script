@@ -1,0 +1,115 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* LIFTWITHCRANE.SCRIPT - Aufnehmen von Objekten mittels Kran.		 	*/
+/*                                                                              */
+/* Dieses Commandscript dient zum Aufnehmen von Objekten durch den Kran.        */
+/*                                                                              */
+/* Original-Script von  : Sixteen Tons Entertainment		                */
+/* Änderungen von       : Eins Eins Zwo Modifications                           */
+/*                                                                              */
+/* 19.12.2007, SM,   Initial-Version                                            */
+/* 13.08.2008, SM,   Gefahrgut-Behandlung hinzugefügt                           */
+/*                                                                              */
+/* **************************************************************************** */
+
+object LiftWithCrane : CommandScript
+{
+	Vector TargetPos;
+	bool move;
+
+	LiftWithCrane()
+	{
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT);
+		SetGroupID(CGROUP_CRANE);
+		SetGroupLeader(true);
+		SetRestrictions(RESTRICT_RECOVERABLE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+		return Caller->GetCarriedObjects().GetNumObjects() == 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		move = true;
+
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+
+		bool ok = false;
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (v.GetEnergy() <= 0.1f * v.GetMaxEnergy() && !v.IsSmoking())
+			        ok = true; // Fahrzeug kaputt und gelöscht
+			if (v.IsDestroyed())
+			        ok = true; // Fahrzeug zerstört
+			if (!ok && !v.IsParking())
+				return false;
+		}
+
+		GameObject obj(Target);
+		if (!obj.IsValid() /*|| obj.IsFlagSet(OF_PERSON_ENCLOSED)*/ || obj.IsBurning())
+			return false;
+
+		GameObjectList l = Caller->GetCarriedObjects();
+		if (l.GetNumObjects() > 0)
+			return false;
+
+		if (!obj.IsFlagSet(OF_RECOVERABLE) && !obj.HasName("fgrr_signal") && !ok)
+			return false;
+
+		bool quiet = true;
+		if (obj.IsPhysicsSimulationEnabled() && !obj.IsPhysicsFreezed())
+		{
+			Vector lin, ang;
+			obj.GetPhysicsLinearVelocity(0, lin);
+			obj.GetPhysicsLinearVelocity(0, ang);
+			if (lin.GetLen() > 8.0f && ang.GetLen() > 0.2f)
+				quiet = false;
+		}
+
+		if (!quiet && !obj.HasName("fgrr_signal"))
+			return false;
+
+		Vehicle vehi(Caller);
+		if (vehi.IsValid())
+		{
+			if (vehi.CanBeTaken(&obj))
+			{
+				move = false;
+				return true;
+			}
+			else if (vehi.IsReady())
+			{
+				vehi.FindReachablePosition(&obj,TargetPos);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle gefahrgut(Target);
+
+		if (move)
+		{
+			Caller->PushActionDeinstall(ACTION_NEWLIST);
+			Caller->PushActionMove(ACTION_APPEND, TargetPos);
+			Caller->PushActionLiftWithCrane(ACTION_APPEND, Target);
+			gefahrgut.PushActionExecuteCommand(ACTION_INSERT,"gefahrgut_check",Caller,3,false);
+		} else
+		{
+			Caller->PushActionLiftWithCrane(ACTION_NEWLIST, Target);
+			gefahrgut.PushActionExecuteCommand(ACTION_INSERT,"gefahrgut_check",Caller,3,false);
+		}
+		if (gefahrgut.HasNamePrefix("orkan"))
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"deblock",Target,Target->GetUserData(),false);
+	}
+};

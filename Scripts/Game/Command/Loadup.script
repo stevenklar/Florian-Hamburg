@@ -1,0 +1,224 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* LOADUP.SCRIPT - Aufladen von Objekten auf den Abschleppwagen.                */
+/*                                                                              */
+/* Dieses Commandscript dient zum aufladen von Objekten, zum Beispiel ein       */
+/* zerstörtes Fahrzeug auf einen Abschleppwagen.				*/
+/*                                                                              */
+/* Original-Script: Witchdoc, bergp83				                */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 29.12.2007, SM,   Funktionalität zur Ersatzbeschaffung von zerstörten        */
+/*		     Fahrzeugen hinzugefügt                                     */
+/* 07.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt            */
+/* 13.08.2008, SM,   Gefahrgut-Behandlung hinzugefügt                           */
+/* 04.11.2008, SM,   Ausblenden des THFLUG3R Flugzeugs hinzugefügt              */
+/* 21.11.2008, SM,   Bug behoben, das fahrende Fahrzeuge abgeschleppt wurden    */
+/*                                                                              */
+/* **************************************************************************** */
+
+object LoadUp : CommandScript
+{
+
+	LoadUp()
+	{
+		SetIcon("liftwithcrane");
+		SetCursor("liftwithcrane");
+		SetValidTargets(ACTOR_VEHICLE | ACTOR_OBJECT | ACTOR_OPEN_HOUSE);
+		SetRestrictions(RESTRICT_TRANSPORTABLE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		bool ok=false;
+		Vehicle v(Caller);
+		GameObject obj(Target);
+
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()))
+			System::Error("not valid");
+		else if (Caller->GetObjectType()!=TYPE_VEHICLE && !Caller->HasNamePrefix("thflug3r"))
+			System::Error("Caller not Vehicle");
+		else if(v.IsCarryingAnything())
+			System::Error("caller has object");
+		else if (!obj.IsValid() || obj.IsFlagSet(OF_PERSON_ENCLOSED) || !obj.IsFlagSet(OF_TRANSPORTABLE))
+			System::Error("Person enclosed oder not transportable");
+		else ok=true;
+
+		switch (Target->GetType())
+		{
+			case ACTOR_VEHICLE:
+				Vehicle v(Target);
+				ok=ok && !v.IsSmoking() && !v.HasEnclosedPerson() && !v.IsMoving();
+				break;
+			case ACTOR_OPEN_HOUSE:
+				OpenHouse oh(Target);
+				ok=(oh.NumNonSquadPersonsInside()+oh.NumSquadPersonsInside())==0;
+				break;
+		}
+		
+		ok = ok && (Game::IsFreeplay() || Game::IsMultiplayer());
+	
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector schrott;
+		Actor schrottplatz;
+		Vehicle ZielFzg(Target);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_LOADUP);
+
+		if (Target->HasNamePrefix("thflug3r") && Target->GetType()==ACTOR_OPEN_HOUSE)
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"Ausblenden",Target,0,false);
+			return;
+		}
+
+		if (ZielFzg.HasCommand("ich_bin_kein_fz"))
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"Ausblenden",&ZielFzg,1,false);
+			return;
+		}
+
+		Vehicle gefahrgut(Target);
+		Vehicle v(Caller);
+		ActorList l1;
+		gefahrgut.PushActionExecuteCommand(ACTION_NEWLIST,"gefahrgut_check",Caller,3,false);
+		Caller->PushActionLoadUp(ACTION_APPEND, Target);
+		if (Game::IsFreeplay() || Game::IsMultiplayer())
+		{
+			l1=Game::GetActors("schrottplatz");
+			if(l1.GetNumActors() > 0)
+			{
+				schrottplatz = *l1.GetActor(0);
+				Mission::PlayHint("Fahrzeug wird abtransportiert!");
+			}
+			else
+			{
+				System::Error("LOADUP: Kann Schrottplatz nicht finden!");
+			}
+			schrott=schrottplatz.GetPosition();
+			Game::FindFreePosition(Caller,schrott);
+			v.EnableBlueLights(true);
+			Caller->PushActionMove(ACTION_APPEND, schrott+Vector(0,+150,0));
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 1, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+			Caller->PushActionTurnTo(ACTION_APPEND, schrott+Vector(0,+300,0));
+			Caller->PushActionMove(ACTION_APPEND, schrott);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ASF_Unload",Caller);
+		}
+		else
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_Nord",Caller);
+		}
+	}
+};
+
+
+
+object ASF_Unload : CommandScript
+{
+
+	ASF_Unload()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		GameObjectList ol = Caller->GetCarriedObjects();
+		if (ol.GetNumObjects() == 0)
+			return false;
+
+		Vector TargetPos;
+		Vehicle v(Caller);
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			TargetPos = Caller->GetTargetPoint(ol.GetObject(i), TARGET_UNLOAD);
+			if (!v.CheckUnloadPossible(ol.GetObject(i), TargetPos))
+				return false;
+		}
+		return true;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionUnload(ACTION_APPEND);
+		GameObjectList ol = Caller->GetCarriedObjects();
+		for (int i = 0; i < ol.GetNumObjects(); i++)
+		{
+			ol.GetObject(i)->PushActionWait(ACTION_NEWLIST, 5);
+			ol.GetObject(i)->PushActionDeleteOwner(ACTION_APPEND);
+		}
+
+		GameObject * FzgObj = ol.GetObject(0);
+		const char *FzgName = FzgObj->GetName();
+		Vehicle v(FzgObj);
+		System::Log("INITIALISIERUNG ERSATZBESCHAFFUNGSBLOCK");
+		if (v.GetVehicleType() != VT_NOSQUAD && !v.HasName("oelspur"))
+		{
+			System::Log("ERSATZBESCHAFFUNG START");
+			char ERSATZBESCHAFFUNG[255];
+			const char *FAHRZEUGNAME;
+			const char *KAUFETEMP;
+			KAUFETEMP = "kaufe";
+			FAHRZEUGNAME = FzgName;
+			char ERSATZBESCHAFFUNG[255];
+			snprintf(ERSATZBESCHAFFUNG, 255, "%s_%s",KAUFETEMP,FAHRZEUGNAME);
+			PersonList ObjektListe(FAHRZEUGNAME);
+			for (int Objekt = 0; Objekt < ObjektListe.GetNumPersons(); Objekt++)
+			{
+				Person ObjektPerson(ObjektListe.GetPerson(Objekt));
+				ObjektPerson.PushActionWait(ACTION_NEWLIST, 2.f);
+				ObjektPerson.PushActionDeleteOwner(ACTION_APPEND);
+			}
+
+			GameObjectList DummyObjekte;
+			GameObject *DummyObjekt;
+			DummyObjekte = Game::GetGameObjects("f03");
+			DummyObjekt=*DummyObjekte.GetObject(0);
+			DummyObjekt->PushActionWait(ACTION_APPEND,10.f);
+			DummyObjekt->PushActionExecuteCommand(ACTION_APPEND,ERSATZBESCHAFFUNG,DummyObjekt,false);
+		}
+
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"VCmdWarningLights",Caller, 2, false);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_Nord",Caller);
+	}
+};
+
+object Ausblenden : CommandScript
+{
+	Ausblenden()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		switch(childID)
+		{
+			case 0:
+				Target->Hide();
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_Nord",Caller);
+			break;
+
+			case 1:
+				Vehicle ZielVec(Target);
+				ZielVec.PushActionWait(ACTION_NEWLIST, 1);
+				ZielVec.PushActionDeleteOwner(ACTION_APPEND);
+				Caller->PushActionWait(ACTION_APPEND, 2);
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_Nord",Caller);
+			break;
+		}
+	}
+};

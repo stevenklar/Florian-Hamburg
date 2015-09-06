@@ -1,0 +1,88 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* EMPTYCAR.SCRIPT - Regelungen zum Aussteigen aus Fahrzeugen                   */
+/*                                                                              */
+/* Dieses Commandscript regelt, das ALLE Personen aus dem entsprechenden        */
+/* Fahrzeug aussteigen.                                                         */
+/*                                                                              */
+/* Original-Script: Witchdoc, bergp83		 				*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 24.10.2007, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object EmptyCar : CommandScript
+{
+
+	EmptyCar()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(100);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		Vehicle v(Caller);
+		if (v.HasCommand("FlyTo") && !v.IsOnGround())
+			return false;
+
+		return v.GetNumPassengers() > 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid())
+			return false;
+		
+		if (Caller->GetType()==ACTOR_VEHICLE && Target->GetType()==ACTOR_VEHICLE && Caller->GetID()==Target->GetID())
+		{
+			Vehicle v(Caller);
+			if (!v.IsValid() ||  v.IsDestroyed())
+			        return false;
+			if(v.HasCommand("FlyTo") && !v.IsOnGround())
+				return false;		
+			if(v.GetNumPassengers() > 0)
+				return true;
+		}
+				
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+		
+
+		if (!v.IsCurrentAction("EActionCool") && !v.IsCurrentAction("EActionExtinguish"))
+			v.PushActionWait(ACTION_APPEND, 0.05f);
+
+		PersonList l = v.GetPassengers();
+		for(int i=0; i<l.GetNumPersons(); i++)
+			if (!l.GetPerson(i)->HasAnimation("bark"))
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Target);
+
+		if (v.GetVehicleType() == VT_THW_FGRT_BH)
+
+		{
+			PersonList l2 = v.GetTransports();
+			for(int i = 0; i < l2.GetNumPersons(); i++)
+				if (!l2.GetPerson(i)->HasAnimation("bark"))
+					l2.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Target);
+		}
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+		}
+	}	
+};

@@ -1,0 +1,116 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* STABILIZE.SCRIPT - Script zur Stabilisierung von Verletzten.                 */
+/*                                                                              */
+/* Dieses Commandscript dient zum Stabilisieren von Verletzten.                 */
+/*                                                                              */
+/* Original-Script: Bass-Ti                                                     */
+/*                                                                              */
+/* 01.01.2008, SM,   Initial-Version                                            */
+/* 02.08.2008, SM,   Wenn Patient bereits behandelt wurde, dann keine           */
+/*		     Hilfe durchführen.                                         */
+/*                                                                              */
+/* **************************************************************************** */
+
+const char DUMMY_TREATMENT[] = "DUMMYTreatment";
+
+object Stabilize : CommandScript
+{
+	Stabilize()
+	{
+		SetValidTargets(ACTOR_PERSON);
+		SetRestrictions(RESTRICT_NOTARRESTED);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleExists(CPE_INJURED_PERSON | CPE_WOUNDED_SQUAD);
+		SetIcon("heal");
+		SetCursor("heal");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		GameObjectList SelectPer = Game::GetSelectedGameObjects();
+		if (SelectPer.GetNumObjects() > 1)
+			return false;
+
+		Person p(Caller);
+		if (p.IsValid() && (p.IsCarryingPerson() || p.IsEquipped() || p.IsLinkedWithPerson() || p.GetFirehoseID() != 0 || p.IsPulling() || p.GetEnteredCarID() != -1))
+			return false;
+
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid() || Caller->GetID() == Target->GetID())
+			return false;
+
+		if (Target->GetType() == ACTOR_PERSON)
+		{
+			Person pTar(Target);
+
+			if ((pTar.GetUserData() == 42) || (pTar.GetUserData() == 43))
+				return false;
+
+			if (!pTar.IsDrowning() && pTar.GetRole() != ROLE_ANIMAL && !pTar.IsRescueDog() && (pTar.IsInjured() || pTar.IsWoundedSquad()) && pTar.GetEnteredCarID() == -1 && !pTar.IsCarried() )
+				return true;
+
+			return false;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_TREATMENT);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, DUMMY_TREATMENT, Target, 2, false);
+	}
+};
+
+object DUMMYTreatment : CommandScript
+{
+	DUMMYTreatment()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return false;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person pTar(Target);
+		// Stabilize
+		if (childID == 2)
+		{
+			Person pTar(Target);
+
+			if (pTar.IsDead())
+			{
+				Mission::PlayHint("Die Person ist tot!");
+				pTar.SetUserData(45);
+				return;
+			}
+
+			pTar.SetInjuredLifeDrain(0);
+			pTar.SetClassified(true);
+			pTar.SetUserData(45);			
+		}
+		Caller->PushActionSwitchAnim(ACTION_APPEND,"treatinjured1");
+		Caller->PushActionWait(ACTION_APPEND, 10.f);
+		Caller->PushActionSwitchAnim(ACTION_APPEND,"idle");
+	}
+};

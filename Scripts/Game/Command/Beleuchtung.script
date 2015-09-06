@@ -1,0 +1,386 @@
+object Umfeld_LM : CommandScript
+{
+	Umfeld_LM()
+ 	{
+		SetCursor("LightOn");
+		SetIcon("LightOn");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle Fahrzeug(Caller);
+		switch(childID)
+		{
+			case 0:
+				if (Fahrzeug.IsSpecialLightEnabled())
+				{
+					Fahrzeug.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+	 				Fahrzeug.EnableSpecialLights(false);
+
+				}
+				else
+				{
+					Fahrzeug.PlayAnimOpenDoor(DAT_SPECIAL, 3.0f);
+	 				Fahrzeug.EnableSpecialLights(true);
+				}
+			break;
+			
+			case 1:
+				Fahrzeug.PlayAnimOpenDoor(DAT_SPECIAL, 3.0f);
+ 				Fahrzeug.EnableSpecialLights(true);
+			break;
+			
+			case 2:
+				Fahrzeug.PlayAnimCloseDoor(DAT_SPECIAL, 3.0f);
+				Fahrzeug.EnableSpecialLights(false);
+			break;
+ 		}
+ 	}	
+};
+
+object VCmdUmfeld : CommandScript
+{
+	VCmdUmfeld()
+ 	{
+		SetCursor("LightOn");
+		SetIcon("LightOn");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle Fahrzeug(Caller);
+		switch(childID)
+		{
+			case 0:
+				if (Fahrzeug.IsSpecialLightEnabled())
+				{
+	 				Fahrzeug.EnableSpecialLights(false);
+				}
+				else
+				{
+	 				Fahrzeug.EnableSpecialLights(true);
+				}
+			break;
+			
+			case 1:
+ 				Fahrzeug.EnableSpecialLights(true);
+			break;
+			
+			case 2:
+				Fahrzeug.EnableSpecialLights(false);
+			break;
+ 		}
+ 	}	
+};
+
+object VCmdWarningLights : CommandScript
+{
+ 	VCmdWarningLights()
+ 	{
+		SetPriority(20);
+ 		SetIcon("warning");
+ 		SetCursor("warning");
+		SetPriority(20);
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return true;
+ 	}
+ 
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle Fahrzeug(Caller);
+		switch(childID)
+		{
+			case 0:
+				if (Fahrzeug.GetBlinkerStatus() == BLT_BOTH)
+				{
+	 				Fahrzeug.EnableBlinker(BLT_NONE);
+				}
+				else
+				{
+	 				Fahrzeug.EnableBlinker(BLT_BOTH);
+				}
+			break;
+			
+			case 1:
+	 			Fahrzeug.EnableBlinker(BLT_BOTH);
+			break;
+			
+			case 2:
+	 			Fahrzeug.EnableBlinker(BLT_NONE);
+			break;
+ 		}
+ 	}	
+};
+
+object Triblitz : CommandScript
+{
+ 	Triblitz()
+ 	{
+		SetCursor("triblitz");
+		SetIcon("triblitz");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+
+ 		return false;
+ 	}
+
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		if (!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID())
+ 			return false;
+
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+		Vehicle v(Caller);
+		v.PushActionWait(ACTION_NEWLIST, 0.1f);
+ 		if (!v.HasCommand("DUMMYHasTriblitz"))
+ 		{
+			Vector PerPos = Caller->GetPosition();
+			float r[9];
+			float childr[9];
+			Caller->GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+
+			if (Game::FindFreePosition(Caller, PerPos, 140.f))
+			{
+				GameObject mDummy;
+	          		mDummy = Game::CreateObject("mod:Prototypes/Objects/Hamburg Sonstige/invisible.e4p", "Triblitz");
+				if (mDummy.IsValid())
+				{
+					float dx = -200.f, dy = 0.f, dz = 0.f;
+					Math::RotateVector(dx, dy, dz, r);
+					Math::EulerToMatrix(180.0f, 0.f, 0.f, childr);
+					Math::MultiplyMatrices(childr, r);
+					PerPos = PerPos + Vector(dx, dy, 0);
+					mDummy.SetRotation(childr[0], childr[1], childr[2], childr[3], childr[4], childr[5], childr[6], childr[7], childr[8]);
+					mDummy.SetPosition(PerPos);
+					mDummy.UpdatePlacement();
+					mDummy.PushActionRedirect(ACTION_NEWLIST);
+					mDummy.SetSelectable(false);
+				}
+				GameObject mDummyRedirect;
+		            	mDummyRedirect= Game::CreateObject("mod:Prototypes/Objects/Hamburg Sonstige/invisible.e4p", "DummyTriblitz");
+				if (mDummyRedirect.IsValid())
+				{
+					float dx = -100.f, dy = 0.f, dz = 0.f;
+					Math::RotateVector(dx, dy, dz, r);
+					Math::EulerToMatrix(180.0f, 0.f, 0.f, childr);
+					Math::MultiplyMatrices(childr, r);
+					PerPos = PerPos + Vector(dx, dy, 0);
+					mDummyRedirect.SetRotation(childr[0], childr[1], childr[2], childr[3], childr[4], childr[5], childr[6], childr[7], childr[8]);
+					mDummyRedirect.SetPosition(PerPos);
+					mDummyRedirect.UpdatePlacement();
+					mDummyRedirect.PushActionExecuteCommand(ACTION_NEWLIST, "DummyTriblitz", Target, childID, false);
+					mDummyRedirect.SetSelectable(false);
+				}
+
+				int PlayerID = v.GetPlayerMP();
+				mDummy.SetPlayerMP(PlayerID);
+				mDummyRedirect.SetPlayerMP(PlayerID);
+				int UnitID = v.GetID();
+				mDummy.SetUserData(UnitID);
+				mDummyRedirect.SetUserData(UnitID);
+				v.AssignCommand("DUMMYHasTriblitz");
+				v.EnableTrafficLight(TLT_GREEN);
+				return;
+			}
+
+ 		}
+
+		if (v.HasCommand("DUMMYHasTriblitz"))
+		{
+			Vehicle v(Caller);
+
+			int UnitID = v.GetID();
+			GameObjectList list = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < list.GetNumObjects(); i++)
+			{
+				GameObject *obj = list.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+	
+			GameObjectList list2 = Game::GetGameObjects("DummyTriblitz");
+			for(int i = 0; i < list2.GetNumObjects(); i++)
+			{
+				GameObject *obj = list2.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+			v.EnableTrafficLight(TLT_NONE);
+			v.RemoveCommand("DUMMYHasTriblitz");
+			return;
+		}
+
+ 	}
+};
+
+object DummyTriblitz : CommandScript
+{
+ 	DummyTriblitz()
+ 	{
+ 		SetGroupID(20);
+ 	}
+
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 	}
+
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		Vehicle v(Target);
+		GameObject mDummy(Caller);
+
+		if (v.IsDestroyed() || !v.IsValid() || v.IsSmoking() || v.IsCurrentAction("EActionFindPath") || v.IsCurrentAction("EActionExtinguish"))
+		{
+			int UnitID = v.GetID();
+			GameObjectList list = Game::GetGameObjects("Triblitz");
+			for(int i = 0; i < list.GetNumObjects(); i++)
+			{
+				GameObject *obj = list.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}
+
+			v.EnableTrafficLight(TLT_NONE);
+			mDummy.PushActionDeleteOwner(ACTION_NEWLIST);
+		} else
+		{
+			mDummy.PushActionWait(ACTION_NEWLIST, 1.0f);
+			mDummy.PushActionExecuteCommand(ACTION_APPEND, "DummyTriblitz", Target, childID, false);
+		}
+ 	}
+};
+
+object DUMMYHasTriblitz : CommandScript
+{
+ 	DUMMYHasTriblitz()
+ 	{
+ 		SetGroupID(20);
+ 	}
+ 
+ 	bool CheckGroupVisibility(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		return false;
+ 	}
+ 
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return false;
+ 	}
+ 
+ 	void PushActions(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 	}
+};

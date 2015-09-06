@@ -1,0 +1,52 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* USECHAINSAW.SCRIPT - Benutzen der Motorkettensäge.                           */
+/*                                                                              */
+/* Dieses Commandscript ermöglicht es Einsatzkräften, die Motorkettensäge zu	*/
+/* benutzen.                                                                    */
+/*                                                                              */
+/* Original-Script: Witchdoc			 			        */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 17.08.2008, SM,   Wartezeit beim Einsatz der Motorkettensäge erhöht		*/
+/*                                                                              */
+/* **************************************************************************** */
+
+object UseChainSaw : CommandScript
+{
+	UseChainSaw()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetRestrictions(RESTRICT_CUTABLE | RESTRICT_NOTBURNING);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleEquipment(EQUIP_CHAINSAW);
+		SetPossibleExists(CPE_CUTABLE_OBJECTS);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Caller->GetID() == Target->GetID() || Caller->GetEquipment()!= EQUIP_CHAINSAW)
+			return false;
+		
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if(p.GetEnteredCarID() != -1)
+			return false;
+
+		GameObject obj(Target);    		
+		if(obj.IsValid())
+			return true;
+		
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_CHAINSAW);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionUseEquipment(ACTION_APPEND, Target, ChildID, 16.f);	
+	}
+};

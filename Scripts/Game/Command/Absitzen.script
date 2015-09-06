@@ -1,0 +1,331 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de		        */
+/*                                                                              */
+/* ABSITZEN.SCRIPT - Absitzen von Einsatzkräften und stellen von Trupps.        */
+/*                                                                              */
+/* Dieses Commandscript dient zum automatischen Absitzen der Einsatzkräfte von  */
+/* den Fahrzeugen. Dabei rüsten sie sich automatisch je nach Schadensart aus.   */
+/*                                                                              */
+/* Original-Script: Tim Noetzel, Witchdoc, bergp83		                */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 24.10.2007, SM,   Bug beseitigt, das sich die Gruppen- und Fahrzeugführer    */
+/* 		     automatisch mit ausrüsten - Abfrage Has Command            */
+/* 31.10.2007, SM,   S-Rohr-Absitzautomatik eingefügt.				*/
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt            */
+/* 17.08.2008, SM,   Bug beseitigt, das die Gruppen- und Fahrzeugführer beim    */
+/* 		     automatischen Absitzen nicht mit ausgestiegen sind		*/
+/* 16.11.2008, SM,   Bug eseitigt das der Fahrzeugführer das S-Rohr bedient.    */
+/*                                                                              */
+/* **************************************************************************** */
+
+// absitzen	 	   : Einheiten sitzen ab und erstellen einen Angriffstrupp, die nächsten 4  werden mit
+//			     Schläuchen ausgerüstet der Rest ist frei. Fahrzeugführer sitzt normal ab.
+// absitzen_feuer 	   : Einheiten sitzen ab, schnappen sich Schlauchkörbe und schließen diese an.
+//			     Fahrzeugführer sitzt normal ab.
+// absitzen_th		   : Einheiten sitzen ab. Angriffstrupp mit Rettungsschere, der Rest mit Feuerlöschern
+//			     sowie angeschlossenen Schläuchen. Fahrzeugführer sitzt normal ab.
+// absitzen_schnellangriff : Ein Feuerwehrmann sitzt ab, holt sich einen Schlauch und schliesst diesen an das
+//			     Fahrzeug an. Fahrzeugführer sitzt normal ab.
+
+object absitzen : CommandScript
+{
+	absitzen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetDoubleClickable(true);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(100);
+		SetIcon("EmptyCar");
+		SetCursor("EmptyCar");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		Vehicle v(Caller);
+		if (v.HasCommand("FlyTo") && !v.IsOnGround())
+			return false;
+
+		return v.GetNumPassengers() > 0;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid() || !Target->IsValid())
+			return false;
+
+		if (Caller->GetType()==ACTOR_VEHICLE && Target->GetType()==ACTOR_VEHICLE && Caller->GetID()==Target->GetID())
+		{
+			Vehicle v(Caller);
+			if (!v.IsValid() ||  v.IsDestroyed())
+			        return false;
+			if(v.HasCommand("FlyTo") && !v.IsOnGround())
+				return false;
+			if(v.GetNumPassengers() > 0)
+				return true;
+		}
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		PersonList l = v.GetPassengers();
+		for(int i=0; i<l.GetNumPersons(); i++)
+			if (!l.GetPerson(i)->HasAnimation("bark"))
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Target);
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+	}
+};
+
+object absitzen_feuer : CommandScript
+{
+	absitzen_feuer()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("absitzen_feuer");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->GetID() == Target->GetID())
+			return false;
+		Vehicle v(Caller);
+		return v.GetNumPassengers() > 0;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		PersonList l = v.GetPassengers();
+		Vector pos = v.GetPosition();
+		Game::FindFreePosition(l.GetPerson(0),pos);
+		int got_hoses=2;
+
+		for (int i = 0; i< l.GetNumPersons(); i++)
+		{
+			if (!l.GetPerson(i)->HasCommand("ich_bin_ein_einsatzleiter"))
+			{
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Caller);
+				l.GetPerson(i)->PushActionWait(ACTION_NEWLIST,i+3.0f);
+				l.GetPerson(i)->SetCommandable(false);
+
+				if (i < 7)
+				{
+					l.GetPerson(i)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+					l.GetPerson(i)->PushActionTurnTo(ACTION_APPEND, Target);
+					
+					if (got_hoses != 0)
+					{
+						l.GetPerson(i)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(i),EQUIP_FIREHOSE);
+						l.GetPerson(i)->PushActionExecuteCommand(ACTION_APPEND,"AttachFireHose",Caller,1,true);
+						got_hoses--;
+					}
+				}
+
+				Game::FindFreePosition(l.GetPerson(i),pos);
+				l.GetPerson(i)->SetCommandable(true);
+				l.GetPerson(i)->PushActionMove(ACTION_APPEND,pos);
+				l.GetPerson(i)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(i),EQUIP_FIRE_EXTINGUISHER);
+			}
+			else
+			{
+				Game::FindFreePosition(l.GetPerson(i),pos);
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			}
+		}
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+		v.SetChildEnabled("haspel_racked", false);
+		v.SetChildEnabled("haspel_floor", true);
+	}
+};
+
+object absitzen_th : CommandScript
+{
+	absitzen_th()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("absitzen_th");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->GetID() == Target->GetID())
+			return false;
+
+		Vehicle v(Caller);
+		return v.GetNumPassengers() > 0;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		PersonList l = v.GetPassengers();
+		Vector pos = v.GetPosition();
+		Game::FindFreePosition(l.GetPerson(0),pos);
+
+		if (!l.GetPerson(0)->HasCommand("ich_bin_ein_einsatzleiter"))
+		{
+			l.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			l.GetPerson(0)->SetCommandable(false);
+			l.GetPerson(0)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+			l.GetPerson(0)->PushActionTurnTo(ACTION_APPEND, Target);
+			l.GetPerson(0)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(0),EQUIP_SHEARS);
+			l.GetPerson(0)->SetCommandable(true);
+			l.GetPerson(0)->PushActionMove(ACTION_APPEND,pos);
+		}
+		else
+		{
+			l.GetPerson(0)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+		}
+
+
+		if (!l.GetPerson(1)->HasCommand("ich_bin_ein_einsatzleiter"))
+		{
+			l.GetPerson(1)->PushActionWait(ACTION_NEWLIST,1.5f);
+			l.GetPerson(1)->PushActionLeaveCar(ACTION_APPEND, Caller);
+			l.GetPerson(1)->SetCommandable(false);
+			l.GetPerson(1)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+			l.GetPerson(1)->PushActionTurnTo(ACTION_APPEND, Target);
+
+			l.GetPerson(1)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(1),EQUIP_SHEARS);
+
+			l.GetPerson(1)->SetCommandable(true);
+			Game::FindFreePosition(l.GetPerson(1),pos);
+			l.GetPerson(1)->PushActionMove(ACTION_APPEND,pos);
+		}
+		else
+		{
+			l.GetPerson(1)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+		}
+
+
+		if (!l.GetPerson(2)->HasCommand("ich_bin_ein_einsatzleiter"))
+		{
+			l.GetPerson(2)->PushActionWait(ACTION_NEWLIST,2.0f);
+			l.GetPerson(2)->PushActionLeaveCar(ACTION_APPEND, Caller);
+			l.GetPerson(2)->SetCommandable(false);
+			l.GetPerson(2)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+			l.GetPerson(2)->PushActionTurnTo(ACTION_APPEND, Target);
+			l.GetPerson(2)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(2),EQUIP_FIREHOSE);
+			l.GetPerson(2)->PushActionExecuteCommand(ACTION_APPEND,"AttachFireHose",Caller,1,true);
+			l.GetPerson(2)->SetCommandable(true);
+			Game::FindFreePosition(l.GetPerson(2),pos);
+			l.GetPerson(2)->PushActionMove(ACTION_APPEND,pos);
+		}
+		else
+		{
+			l.GetPerson(2)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+		}
+
+
+		for (int i = 3; i< l.GetNumPersons(); i++)
+		{
+			if (!l.GetPerson(i)->HasCommand("ich_bin_ein_einsatzleiter"))
+			{
+				l.GetPerson(i)->PushActionWait(ACTION_NEWLIST,i+3.0f);
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, Caller);
+				l.GetPerson(i)->SetCommandable(false);
+
+				l.GetPerson(i)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+				l.GetPerson(i)->PushActionTurnTo(ACTION_APPEND, Target);
+				l.GetPerson(i)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(i),EQUIP_FIRE_EXTINGUISHER);
+				l.GetPerson(i)->SetCommandable(true);
+			}
+			else
+			{
+				l.GetPerson(i)->PushActionLeaveCar(ACTION_NEWLIST, Caller);
+			}
+		}
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+		v.SetChildEnabled("haspel_racked", false);
+		v.SetChildEnabled("haspel_floor", true);
+	}
+};
+
+
+object absitzen_schnellangriff : CommandScript
+{
+	absitzen_schnellangriff()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("absitzen_schnellangriff");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->GetID() == Target->GetID())
+			return false;
+
+		Vehicle v(Caller);
+		return v.GetNumPassengers() > 0;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.PushActionWait(ACTION_NEWLIST, 1);
+		PersonList l = v.GetPassengers();
+		Vector pos = v.GetPosition();
+		Game::FindFreePosition(l.GetPerson(0),pos);
+
+
+		if (v.HasCommand("schnellangriff_aktiviert"))
+		{
+			Mission::PlayHint("S-Rohr wird bereits eingesetzt!");
+			return;
+		}
+
+		if (!l.GetPerson(0)->HasCommand("ich_bin_ein_einsatzleiter"))
+		{
+			l.GetPerson(0)->PushActionLeaveCar(ACTION_APPEND, Caller);
+			l.GetPerson(0)->PushActionWait(ACTION_NEWLIST,3.0f);
+			l.GetPerson(0)->SetCommandable(false);
+			l.GetPerson(0)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+			l.GetPerson(0)->PushActionTurnTo(ACTION_APPEND, Target);
+			l.GetPerson(0)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(0),EQUIP_FIREHOSE);
+			l.GetPerson(0)->PushActionExecuteCommand(ACTION_APPEND,"AttachFireHose",Caller,1,true);
+			l.GetPerson(0)->SetCommandable(true);
+			Game::FindFreePosition(l.GetPerson(0),pos);
+			l.GetPerson(0)->PushActionMove(ACTION_APPEND,pos);
+			v.AssignCommand("schnellangriff_aktiviert");
+		}
+		else
+		{
+			l.GetPerson(1)->PushActionLeaveCar(ACTION_APPEND, Caller);
+			l.GetPerson(1)->PushActionWait(ACTION_NEWLIST,3.0f);
+			l.GetPerson(1)->SetCommandable(false);
+			l.GetPerson(1)->PushActionMove(ACTION_APPEND, Caller, TARGET_EQUIPMENTDOOR);
+			l.GetPerson(1)->PushActionTurnTo(ACTION_APPEND, Target);
+			l.GetPerson(1)->PushActionGetEquipment(ACTION_APPEND, l.GetPerson(1),EQUIP_FIREHOSE);
+			l.GetPerson(1)->PushActionExecuteCommand(ACTION_APPEND,"AttachFireHose",Caller,1,true);
+			l.GetPerson(1)->SetCommandable(true);
+			Game::FindFreePosition(l.GetPerson(1),pos);
+			l.GetPerson(1)->PushActionMove(ACTION_APPEND,pos);
+			v.AssignCommand("schnellangriff_aktiviert");
+		}
+
+		v.PushActionExecuteCommand(ACTION_NEWLIST, "VCmdWarningLights", Caller, 1, false);
+
+		v.PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
+		v.SetChildEnabled("haspel_racked", false);
+		v.SetChildEnabled("haspel_floor", true);
+	}
+};

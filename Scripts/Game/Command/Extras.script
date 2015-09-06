@@ -1,0 +1,105 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.einseinszwo.de.ms              */
+/*                                                                              */
+/* EXTRAS.SCRIPT - Diverse Scripts zum Debuggen und für die Entwicklung.	*/
+/*                                                                              */
+/* Dieses Commandscript beinhaltet diverse Commands zum Testen.			*/
+/*                                                                              */
+/* Original-Script   : Eins Eins Zwo Modifications                              */
+/*                                                                              */
+/* 08.10.2008, SM,   Initial-Version                                            */
+/* 22.06.2008, SM,   Command "Kamera_Aendern" zum Ändern der aktuellen		*/
+/*		     Kamera-Einstellungen hinzugefügt				*/
+/*                                                                              */
+/* **************************************************************************** */
+
+
+
+
+// OBJEKT ANZÜNDEN:
+
+object BurnDown : CommandScript
+{
+	BurnDown()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+
+		if (Target->GetType() == ACTOR_OPEN_HOUSE)
+		{
+			GameObject obj(Target);
+			obj.Burn();
+		}
+
+		if (Target->GetType() == ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			v.Explode();
+			v.EnablePhysicsSimulation(true);
+			v.SetPhysicsVelocity(0.0f, 0.0f, +15.0f);
+		}
+
+		if (Target->GetType() == ACTOR_HOUSE)
+		{
+			GameObject obj(Target);
+			obj.Burn();
+		}
+	}
+};
+
+
+object Kamera_Aendern : CommandScript
+{
+	Kamera_Aendern()
+	{
+		SetIcon("use");
+		SetCursor("use");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Camera::GetMinCamZ() == 500.0f)
+		{
+			Camera::SetMinCamZ(1400.0f);
+			Camera::SetMaxCamZ(3500.0f);
+			Camera::SetMinCamPitch(47.0f);
+			Camera::SetMaxCamPitch(74.0f);
+			if (Game::IsMultiplayer())
+			{
+                        	ScriptInterface::ShowMessageTickerTextForAll("Die Kamera- und Zoomeinstellungen wurden auf den EM4-Standard zurückgesetzt!");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("Die Kamera- und Zoomeinstellungen wurden auf den EM4-Standard zurückgesetzt!");
+			}
+		}
+		else
+		{
+			Camera::SetMinCamZ(500.0f);
+			Camera::SetMaxCamZ(9000.0f);
+			Camera::SetMinCamPitch(20.0f);
+			Camera::SetMaxCamPitch(90.0f);
+			if (Game::IsMultiplayer())
+			{
+                        	ScriptInterface::ShowMessageTickerTextForAll("Die Kamera- und Zoomeinstellungen wurden auf die erweiterten Einstellungen gesetzt!");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("Die Kamera- und Zoomeinstellungen wurden auf die erweiterten Einstellungen gesetzt!");
+			}
+		}
+	}
+};

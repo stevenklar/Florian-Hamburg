@@ -1,0 +1,1950 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* EINSAETZE.SCRIPT - Initialisieren und Ausführen von Zufalls-Einsätzen        */
+/*                                                                              */
+/* Dieses Commandscript dient zur Initialisierung und Erzeugung von             */
+/* zufälligen Einsätzen (wie zum Beispiel BMA-Alarme, TVNOT etc.).		*/
+/*                                                                              */
+/* Original-Script von  : Eins Eins Zwo Modifications                           */
+/* Ideen zum Script von : Witchdoctor (BMA UND DRZF), Bass-Ti (TVNOT)           */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 02.10.2007, SM,   BMA-Einsätze eingefügt                                     */
+/* 13.10.2007, SM,   Bei BMA-Einsätzen in OpenHouses zwischen 20 und 9 Uhr      */
+/* 		     nachts werden die Türen verriegelt und müssen aufgebrochen */
+/*                   werden.                                                    */
+/* 17.10.2007, SM,   TVNOT-Einsätze sowie Prüfung auf laufende Einsätze         */
+/*                   "CheckEinsaetze" eingefügt.                                */
+/* 29.10.2007, SM,   DRZF-Einsätze eingefügt.					*/
+/* 27.12.2007, SM,   Bei OpenHouses, die bereits durch EM4 verschlossen sind    */
+/*		     (Flag OF_LOCKED) werden bei TVNOT nicht die Türen ver-     */
+/*		     riegelt.                                                   */
+/* 27.12.2007, SM,   Bei DRZF einen Bug behoben, dass der Baum ausserhalb war   */
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt            */
+/* 19.02.2008, SM,   Sturmflutwarnungs-Einsatz hinzugefügt.                     */
+/* 23.03.2008, SM,   Neustrukturierung des Scriptes aus Performance-Gründen.    */
+/* 24.08.2008, SM,   Einsatz Orkan hinzugefügt.                                 */
+/* 27.07.2008, SM,   Einsatz Ölspur hinzugefügt.                                */
+/* 11.08.2008, SM,   Einsatz Verkehrsunfall mit Gefahrgut hinzugefügt.          */
+/* 05.10.2008, SM,   Einsatz THYH (Höhenrettung) hinzugefügt.                   */
+/* 04.11.2008, SM,   Einsatz THFLUG3R (Feuer Flugzeug) hinzugefügt.             */
+/* 12.04.2009, Dre,  Leute in BMA VO sind bei Auslösung nicht mehr Verletzt     */
+/* 12.04.2009, SM,   Fehler von gleichzeitig auftretenden BMA-Einsätzen behoben	*/
+/*                                                                              */
+/* **************************************************************************** */
+
+/* **************************************************************************** */
+/* EINSATZTYPEN DER ZUFALLSEINSÄTZE:					        */
+/* 1 = BMA-EINLAUF    2 = TV NOT    3 = DRZF      4 = STURMFLUT      5 = ORKAN  */
+/* 										*/
+/* 6 = ÖLSPUR	  7 = VERKEHRSUNFALL GEFAHRGUT	      8 = THY-H (HÖHENRETTUNG)	*/
+/* 										*/
+/* 9 = THFLUG3R									*/
+/* 										*/
+/* **************************************************************************** */
+
+// INITIALISIERUNG DER ZUFALLSEINSÄTZE
+bool DeluxeVersion=false;
+GameObject DummyObj;
+bool bereit=false;
+int EinsatzInit=0;
+VehicleList MarkerList;
+int MarkerIndex;
+GameObjectList Baumliste;
+int Sturmzeit;
+
+// EVENT-ID DES JEWEILIGEN ZUFALLSEINSATZES
+int EinsatzID=-1;
+
+//PUNKTE-ANZAHL DES JEWEILIGEN ZUFALLSEINSATZES
+int Punkte;
+
+Person pInjure;
+
+// DIVERSE PERSONEN-PROTOTYPEN
+const int MAX_PROTOTYPES = 10;
+const char * prototypes[MAX_PROTOTYPES];
+const char PROTOTYPE1[] = "mod:Prototypes/Persons/Civil/civilminister01.e4p";
+const char PROTOTYPE2[] = "mod:Prototypes/Persons/Civil/civilman03_green.e4p";
+const char PROTOTYPE3[] = "mod:Prototypes/Persons/Civil/civilman02_silver.e4p";
+const char PROTOTYPE4[] = "mod:Prototypes/Persons/Civil/firewatchguy01.e4p";
+const char PROTOTYPE5[] = "mod:Prototypes/Persons/Civil/civilman02_blue.e4p";
+const char PROTOTYPE6[] = "mod:Prototypes/Persons/Civil/civilwoman01_red.e4p";
+const char PROTOTYPE7[] = "mod:Prototypes/Persons/Civil/civilwoman02_beige.e4p";
+const char PROTOTYPE8[] = "mod:Prototypes/Persons/Civil/civilwoman03_blue.e4p";
+const char PROTOTYPE9[] = "mod:Prototypes/Persons/Civil/civilwoman04.e4p";
+const char PROTOTYPE10[] = "mod:Prototypes/Persons/Civil/civilwoman05.e4p";
+const int MAX_PROTONAMES= 8;
+const char * pName[MAX_PROTONAMES];
+prototypes[0] = PROTOTYPE1;
+prototypes[1] = PROTOTYPE2;
+prototypes[2] = PROTOTYPE3;
+prototypes[3] = PROTOTYPE4;
+prototypes[4] = PROTOTYPE5;
+prototypes[5] = PROTOTYPE6;
+prototypes[6] = PROTOTYPE7;
+prototypes[7] = PROTOTYPE8;
+prototypes[8] = PROTOTYPE9;
+prototypes[9] = PROTOTYPE10;
+
+// DIVERSE FAHRZEUG-PROTOTYPEN
+const int MAX_PROTOVECS = 13;
+const char * protovecs[MAX_PROTOVECS];
+const char PROTOVECS1[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck00.e4p";
+const char PROTOVECS2[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck01.e4p";
+const char PROTOVECS3[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck02.e4p";
+const char PROTOVECS4[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck05.e4p";
+const char PROTOVECS5[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck07.e4p";
+const char PROTOVECS6[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck08.e4p";
+const char PROTOVECS7[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck09.e4p";
+const char PROTOVECS8[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck10.e4p";
+const char PROTOVECS9[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck11.e4p";
+const char PROTOVECS10[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck12.e4p";
+const char PROTOVECS11[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck13.e4p";
+const char PROTOVECS12[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck14.e4p";
+const char PROTOVECS13[] = "mod:Prototypes/Vehicles/Wrecks_sliceable/carwreck15.e4p";
+
+object Zufallseinsatz : CommandScript
+{
+	Zufallseinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		System::Log("EINSAETZE: ZUFALLSEINSATZ: Start");
+		int Zufallszahl=Math::rand()%40;
+		if ((bereit) && (EinsatzID<0))
+		{
+			EinsatzInit++;
+			if (Zufallszahl < EinsatzInit)
+			{
+				EinsatzInit=-40;
+				Zufallszahl=Math::rand()%50;
+				switch (Zufallszahl)
+				{
+					case 1:
+					case 11:
+					case 21:
+					case 31:
+					case 41:
+					case 43:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz BMA Start");
+						Game::ExecuteCommand("bmaeinsatz",Caller);
+						break;
+					case 2:
+					case 12:
+					case 22:
+					case 32:
+					case 42:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz OELSPUR Start");
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"oelspureinsatz",Caller,0,false);
+						break;
+					case 3:
+					case 13:
+					case 23:
+					case 33:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz OELSPUR Start");
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"oelspureinsatz",Caller,0,false);
+						break;
+
+					case 4:
+					case 14:
+					case 24:
+					case 34:
+					case 44:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz VERKEHRSUNFALL GEFAHRGUT Start");
+						Game::ExecuteCommand("Verkehrsunfall",Caller);
+						break;
+					case 5:
+					case 15:
+					case 25:
+					case 35:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz VERKEHRSUNFALL GEFAHRGUT Start");
+						Game::ExecuteCommand("Verkehrsunfall",Caller);
+						break;
+					case 45:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz STURMFLUT Start");
+						Game::ExecuteCommand("sturmfluteinsatz",Caller);
+						break;
+					case 6:
+					case 16:
+					case 26:
+					case 36:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz OELSPUR Start");
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"oelspureinsatz",Caller,0,false);
+						break;
+					case 46:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz THFLUG3R Start");
+						Game::ExecuteCommand("thflug3reinsatz",Caller);
+						break;
+					case 7:
+					case 17:
+					case 27:
+					case 37:
+					case 47:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz DRZF Start");
+						Game::ExecuteCommand("drzfeinsatz",Caller);
+						break;
+					case 8:
+					case 18:
+					case 28:
+					case 38:
+					case 48:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz TVNOT Start");
+						Game::ExecuteCommand("tvnoteinsatz",Caller);
+						break;
+					case 9:
+					//case 19:
+					//case 29:
+					//case 39:
+					//case 49:
+						System::Log("EINSAETZE.SCRIPT: Zufallseinsatz THY-H Start");
+						Game::ExecuteCommand("thyheinsatz", Caller);
+						break;
+
+					default:
+						EinsatzInit=0;
+						break;
+				}
+			}
+		} else bereit=true;
+		System::Log("EINSAETZE: ZUFALLSEINSATZ: Ende");
+	}
+};
+
+
+
+// EINSATZ BMA
+
+object bmaeinsatz : CommandScript
+{
+	bmaeinsatz()
+	{
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (EinsatzID < 0)
+		{
+			VehicleList bl(VT_THW_FGRR_RL,VT_THW_FGRR_RL);
+			Vehicle bma;
+			int x=Math::rand()%bl.GetNumVehicles();
+			bma=bl.GetVehicle(x);
+			Punkte=500;
+			bool feuer=false;
+
+			if ((Math::rand()%20)> 15)
+			{
+				GameObjectList ol;
+				GameObject obj;
+				FireObjectList fol;
+				FireObject fob;
+				bool open=false;
+				Punkte=3000;
+				Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON|ACTOR_OBJECT|ACTOR_OPEN_HOUSE|ACTOR_HOUSE);
+				for (int bx=0;(bx<ol.GetNumObjects());bx++)
+				{
+					obj=ol.GetObject(bx);
+					switch (obj.GetObjectType())
+					{
+						case TYPE_OPEN_HOUSE:
+							if (obj.HasFireChilds() && !feuer)
+							{
+								int fx=Math::rand()%obj.GetNumFireChilds();
+								fob=obj.GetFireChild(fx);
+								obj.SetFireObjectBurning(fob.GetName());
+							}
+							feuer=true;
+							break;
+						case TYPE_PERSON:
+							Punkte=Punkte+500;
+							break;
+					}
+				}
+			}
+			else
+			{
+				bma.PushActionExecuteCommand(ACTION_NEWLIST,"bmaeinsatz_alarm",&bma,feuer,false);
+				bma.Show();
+			}
+		}
+	}
+};
+
+object bmaeinsatz_alarm : CommandScript
+{
+	bmaeinsatz_alarm()
+	{
+		SetGroupID(20);
+		SetPriority(900);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int linie)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int feuer)
+	{
+		if (EinsatzID < 0)
+		{
+			System::Log("EINSATZE: BMA ALARM START!!!!");
+			Vehicle bma(Target);
+			OpenHouse oh;
+			int h,m,s;
+			Game::GetTime(h,m,s);
+			if ((h==20) || (h==21) || (h==22) || (h==23) || (h==00) || (h==01) || (h==02) || (h==03) || (h==04) || (h==05) || (h==06) || (h==07) || (h==08))
+			{
+				GameObjectList OHOl;
+				Game::CollectObstaclesOnVirtualObject(bma.GetName(),OHOl, ACTOR_OPEN_HOUSE);
+				for (int i=0;(i<OHOl.GetNumObjects());i++)
+				{
+					oh=OHOl.GetObject(i);
+					if (!oh.IsFlagSet(OF_LOCKED))
+					{
+						oh.CloseDoor(oh.GetEntranceDoorID());
+						oh.ClearFlag(OF_ACCESSIBLE);
+					}
+				}
+			}
+			bma.Show();
+			if (feuer>0)
+			{
+				GameObjectList ol;
+				GameObject obj;
+				Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON);
+				for (int i=0;(i<ol.GetNumObjects());i++)
+				{
+					obj=ol.GetObject(i);
+					float val=rand()%300+600;
+					Person p(&obj);
+					if (p.GetPersonType() == PT_NOSQUAD)
+					{
+						p.Injure(INJUREREASON_ENERGY,true);
+						p.SetLife(val);
+						float val=rand()%2+0.7;
+						p.SetInjuredLifeDrain(val);
+					}
+				}
+			}
+			Punkte=Punkte+1000;
+			bma.EnableSpecialLights(true);
+			char * bmaname="                     ";
+			char * bmafile[]="mod:Audio/fx/bma%u.wav";
+			int j=snprintf(bmaname,21,bmafile,(Math::rand()%6+1));
+			Audio::PlaySample(bmaname);
+			char * text="                                                  ";
+			char * format[]="FEUBMA: %s";
+			int j=snprintf(text,50,format,bma.GetName());
+			Mission::PlayHint(text);
+			Vector BMAPosition=bma.GetPosition();
+			EinsatzID=Game::ShowEvent(text, BMAPosition);
+			ScriptInterface::ShowBriefing();
+			ScriptInterface::OpenObjectives();
+		}
+	}
+};
+
+object bmaeinsatz_scharf : CommandScript
+{
+	bmaeinsatz_scharf()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle bma(Target);
+		bma.Hide();
+		bool feuer=false;
+		GameObjectList ol;
+		GameObject obj;
+		Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_OBJECT|ACTOR_HOUSE|ACTOR_OPEN_HOUSE);
+		for (int i=0;(i<ol.GetNumObjects() && !feuer);i++)
+		{
+			obj=ol.GetObject(i);
+			feuer=obj.IsBurning();
+		}
+		if (feuer && (EinsatzID < 0))
+		{
+			System::Log("EINSAETZE: BMA_SCHARF: ALARM!!!");
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"bmaeinsatz_alarm",&bma,1,false);
+//			bma.PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_brandgase",&bma,0,false);
+		}
+		else
+		{
+			bma.PushActionWait(ACTION_NEWLIST,3.0f);
+			bma.PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_scharf",&bma,0,false);
+		}
+	}
+};
+
+object bmaeinsatz_brandgase : CommandScript
+{
+	bmaeinsatz_brandgase()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		System::Log("EINSAETZE: BMA BRANDGASE START!!!");
+		Vehicle bma(Target);
+		GameObjectList Hausliste;
+		Game::CollectObstaclesOnVirtualObject(bma.GetName(),Hausliste, ACTOR_PERSON);
+		for (int i=0;i<Hausliste.GetNumObjects();i++)
+		{
+			Person p(Hausliste.GetObject(i));
+			if (!p.IsInjured())
+				if (p.GetPersonType() == PT_NOSQUAD && p.GetRole() != ROLE_ANIMAL)
+				{
+					if (p.GetEnteredHouseID()<1)
+					{
+						p.Hurt(INJUREREASON_DROWN,50);
+						p.SetInjuredLifeDrain(1.5);
+					} 
+					else 
+					{
+						p.Hurt(INJUREREASON_DROWN,150);
+						p.SetInjuredLifeDrain(4.5);
+					}
+				} 
+		}
+		bma.PushActionWait(ACTION_NEWLIST,2.0);
+//		bma.PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_brandgase",&bma,0,false);
+	}
+};
+
+object bmaeinsatz_initialisierung : CommandScript
+{
+	bmaeinsatz_initialisierung()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		DummyObj=Caller;
+
+		VehicleList bl(VT_THW_FGRR_RL,VT_THW_FGRR_RL);
+		Vehicle bma;
+		for (int i=0;(i<bl.GetNumVehicles());i++)
+		{
+			bma=bl.GetVehicle(i);
+			bma.SetUserData(i);
+			bma.PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_scharf",&bma,0,false);
+			if (Game::IsMultiplayer())
+				bma.SetPlayerMP(1);
+		}
+		EinsatzInit=0;
+		bereit=false;
+	}
+};
+
+object bmaeinsatz_reset : CommandScript
+{
+	bmaeinsatz_reset()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		// BMA ZURÜCKSTELLEN UND NACH VERLETZTEN ODER FEUERN PRÜFEN
+		GameObjectList ol;
+		GameObject obj;
+		Vehicle bma(Target);
+		bool e_ende=true;
+		Game::CollectObstaclesOnVirtualObject(bma.GetName(),ol, ACTOR_PERSON|ACTOR_OBJECT|ACTOR_HOUSE|ACTOR_OPEN_HOUSE);
+		for (int i=0;(i<ol.GetNumObjects() && e_ende);i++)
+		{
+			obj=ol.GetObject(i);
+			if (obj.GetObjectType() == TYPE_PERSON)
+			{
+				Person p(&obj);
+				e_ende=(e_ende && !p.IsInjured() && !p.IsComatose());
+			}
+			else
+			{
+				e_ende=(e_ende && !obj.IsBurning());
+			}
+		}
+
+		if (e_ende)
+		{
+			bma.EnableSpecialLights(false);
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("Brandmeldeanlage zurückgesetzt");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("Brandmeldeanlage zurückgesetzt");
+			}
+
+			bma.PushActionExecuteCommand(ACTION_NEWLIST,"bmaeinsatz_scharf",&bma,0,false);
+			Game::SetEventFinished(EinsatzID, true, Punkte);
+			EinsatzID=-1;
+			EinsatzInit=0;
+		} else
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("Die EInsatzstelle wurde noch nicht vollständig erkundet!");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("Die Einsatzstelle wurde noch nicht vollständig erkundet!");
+			}
+			e_ende=false;
+	}
+};
+
+object einsatzleiter_bma_reset : CommandScript
+{
+	einsatzleiter_bma_reset()
+	{
+		SetIcon("einsatzleiter_bma_reset");
+		SetCursor("einsatzleiter_bma_reset");
+		SetPriority(80);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Target->GetType()==ACTOR_VEHICLE)
+		{
+			Vehicle v(Target);
+			if (Caller->HasCommand("ich_bin_ein_einsatzleiter") && (v.GetVehicleType()==VT_THW_FGRR_RL))
+			{
+				if (v.IsSpecialLightEnabled())
+					return true;
+				else
+					return false;
+			}
+			if (Caller->HasCommand("ich_bin_ein_fuehrungsdienst") && (v.GetVehicleType()==VT_THW_FGRR_RL))
+			{
+				if (v.IsSpecialLightEnabled())
+					return true;
+				else
+					return false;
+			}
+			else return false;
+		}
+		else return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Caller->PushActionMove(ACTION_NEWLIST,Target,TARGET_ANY);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_reset",Target,0,false);
+	}
+};
+
+
+
+
+// EINSATZ TVNOT:
+
+object tvnoteinsatz : CommandScript
+{
+	tvnoteinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		System::Log("EINSAETZE: TVNOTEINSATZ: Start");
+		OpenHouseList ohList("hostages");
+		int totNum = ohList.GetNumOpenHouses();
+		int randCount = Math::rand()%totNum;
+		OpenHouse oHouse(ohList.GetOpenHouse(randCount));
+		if (oHouse.NumNonSquadPersonsInside() > 0)
+		{
+			PersonList pList = oHouse.GetNonSquadPersonsInside();
+			int totNumPer = pList.GetNumPersons();
+			int randInjured = Math::rand()%totNumPer;
+			pInjure = pList.GetPerson(randInjured);
+			if (pInjure.IsValid() && pInjure.IsInsideMap())
+			{
+				pInjure.RemoveObjectPath();
+				Vector PersPos = pInjure.GetPosition();
+				float val=rand()%300+500;
+				pInjure.Injure(INJUREREASON_UNKNOWN, false);
+				pInjure.SetLife(val);
+				float val=rand()%2+0.5;
+				pInjure.SetInjuredLifeDrain(val);
+	
+				if (!oHouse.IsFlagSet(OF_LOCKED))
+				{
+					oHouse.CloseDoor(oHouse.GetEntranceDoorID());
+					oHouse.ClearFlag(OF_ACCESSIBLE);
+				}
+			
+				if (Game::IsMultiplayer())
+				pInjure.SetPlayerMP(1);
+				Audio::PlaySample("mod:Audio/FX/voices/hints/tvnot.wav");
+				Punkte=800;
+				Mission::PlayHint("TVNOT: Keine näheren Angaben!");
+				Vector TVNotPosition=pInjure.GetPosition();
+				EinsatzID=Game::ShowEvent("TVNOT: Keine näheren Angaben des Anrufers!", TVNotPosition);
+				Caller->PushActionWait(ACTION_APPEND,3);
+				ScriptInterface::ShowBriefing();
+				ScriptInterface::OpenObjectives();
+				DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,2,false);
+			}
+			else 
+			{
+				EinsatzID=-1;
+				EinsatzInit=0;
+				return;
+			}
+		}
+		else
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+	}
+};
+
+
+
+
+// EINSATZ DRZF:
+
+object drzfeinsatz : CommandScript
+{
+	drzfeinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		VehicleList Zivilfahrzeuge(VT_NOSQUAD);
+		int Fahrzeug=Math::rand()%Zivilfahrzeuge.GetNumVehicles();
+		int i=0;
+		Vector Baumposition;
+		Vector PosTemp;
+		Vehicle car;
+		car=Zivilfahrzeuge.GetVehicle(Fahrzeug);
+		if (!car.IsParking() && car.IsCivilCar())
+		{
+			if (!car.IsValid() || car.IsDestroyed() || !car.IsInsideMap())
+			{
+				EinsatzID=-1;
+				EinsatzInit=0;
+				return;
+			}
+			else
+			{
+				PosTemp=car.GetPosition();
+				Baumposition=PosTemp+Vector(((rand()%150)-50),((rand()%150)-50),0);
+				GameObject baum = Game::CreateObject("mod:Prototypes/Objects/Hamburg Sonstige/ast01.e4p", "drzfbaum");
+				Game::FindFreePosition(&baum,Baumposition);
+				baum.SetPosition(Baumposition);
+				if (!baum.IsInsideMap() || !baum.IsValid())
+				{
+					GameObjectList BaumListe("drzfbaum");
+					for (int i=0;(i<BaumListe.GetNumObjects());i++)
+					{
+						GameObject * OldBaum = BaumListe.GetObject(i);
+						OldBaum->PushActionWait(ACTION_NEWLIST, 5);
+						OldBaum->PushActionDeleteOwner(ACTION_APPEND);
+					}
+				}
+				else
+				{
+					if (Game::IsMultiplayer())
+						baum.SetPlayerMP(1);
+					Punkte=500;
+					Audio::PlaySample("mod:Audio/FX/voices/hints/drzf.wav");
+					Mission::PlayHint("DRZF: Baum oder Ast auf Strasse");
+					EinsatzID=Game::ShowEvent("DRZF: Baum oder Ast auf Strasse", Baumposition);
+					ScriptInterface::ShowBriefing();
+					ScriptInterface::OpenObjectives();
+					DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,3,false);
+				}
+			}
+		}
+		else
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+	}
+};
+
+
+
+
+
+// EINSATZ STURMFLUT:
+
+object sturmfluteinsatz_initialisierung : CommandScript
+{
+	sturmfluteinsatz_initialisierung()
+	{
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObjectList HochwasserPunkte("Hochwasser_Punkt");
+		GameObject HochwasserPunkt;
+		for (int i=0;(i<HochwasserPunkte.GetNumObjects());i++)
+		{
+			HochwasserPunkt=HochwasserPunkte.GetObject(i);
+			if (Game::IsMultiplayer())
+				HochwasserPunkt.SetPlayerMP(4);
+			HochwasserPunkt.Hide();
+		}
+	}
+};
+
+object sturmfluteinsatz : CommandScript
+{
+	sturmfluteinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObjectList objList("Hochwasser_Punkt");
+		int totNum = objList.GetNumObjects();
+		int randCount = Math::rand()%totNum;
+		GameObject HochwasserPunkt(objList.GetObject(randCount));
+		if (HochwasserPunkt.IsValid())
+		{
+			HochwasserPunkt.Show();
+			Audio::PlaySample("mod:Audio/FX/voices/hints/sturmflut.wav");
+			Punkte=1000;
+			Mission::PlayHint("Sturmflutwarnung: Schutzmassnahmen durch das THW erforderlich!");
+			Vector HochwasserPosition=HochwasserPunkt.GetPosition();
+			EinsatzID=Game::ShowEvent("Sturmflutwarnung: Massnahmen durch das THW erforderlich!", HochwasserPosition);
+			Caller->PushActionWait(ACTION_APPEND,3);
+			ScriptInterface::ShowBriefing();
+			ScriptInterface::OpenObjectives();
+			if (Game::IsMultiplayer())
+				HochwasserPunkt.SetPlayerMP(4);
+		} else
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+	}
+};
+
+object SetSandsaecke : CommandScript
+{
+	SetSandsaecke()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetIcon("SetSandsaecke");
+		SetCursor("SetSandsaecke");
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return true;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Person p(Caller);
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		if (p.IsContaminated() || p.IsCarryingPerson() || p.IsLinkedWithPerson() || p.IsPulling() || p.IsEquipped() || p.GetEnteredCarID() !=-1)
+			return false;
+		if (p.HasCommand("Geraet_installiert"))
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid())
+			return false;
+		GameObject obj(Target);
+		if (!obj.HasCommand("Hochwasser_Punkt"))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_ANY);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionSwitchAnim(ACTION_APPEND, "usesaw");
+		Caller->PushActionWait(ACTION_APPEND, 15);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "SandsaeckeAufbauen", Caller, 0, false);
+	}
+};
+
+object SandsaeckeAufbauen : CommandScript
+{
+	SandsaeckeAufbauen()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		Person CallerPerson(Caller);
+		Vector PosTemp=CallerPerson.GetPosition();
+		Vector SandsaeckePosition=PosTemp;
+		GameObject Sandsaecke = Game::CreateObject("mod:Prototypes/Objects/Hamburg Sonstige/Sandsaecke.e4p", "Sandsaecke");
+		Game::FindFreePosition(&Sandsaecke,SandsaeckePosition, 20);
+		Sandsaecke.SetPosition(SandsaeckePosition);
+		GameObjectList HochwasserPunkte("Hochwasser_Punkt");
+		GameObject HochwasserPunkt;
+		for (int i=0;(i<HochwasserPunkte.GetNumObjects());i++)
+		{
+			HochwasserPunkt=HochwasserPunkte.GetObject(i);
+			if (Game::IsMultiplayer())
+				HochwasserPunkt.SetPlayerMP(4);
+			HochwasserPunkt.Hide();
+		}
+		CallerPerson.PushActionSwitchAnim(ACTION_APPEND, "idle");
+		CallerPerson.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&CallerPerson,4,false);
+	}
+};
+
+
+
+
+
+
+
+// EINSATZ ORKAN:
+
+const char * baume[10];
+const char baume[0]="mod:Prototypes/Objects/Trees/brokentree01a.e4p";
+const char baume[1]="mod:Prototypes/Objects/Trees/brokentree01b.e4p";
+const char baume[2]="mod:Prototypes/Objects/Trees/brokentree01c.e4p";
+const char baume[3]="mod:Prototypes/Objects/Trees/brokentree01d.e4p";
+const char baume[4]="mod:Prototypes/Objects/Trees/brokentree02a.e4p";
+const char baume[5]="mod:Prototypes/Objects/Trees/brokentree02b.e4p";
+
+object orkaneinsatz : CommandScript
+{
+
+	orkaneinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vector start;
+		Vector TargetPos;
+		bool nachhut=ChildID>0;
+
+		VehicleList MarkerList(VT_THW_FGRR_TRL,VT_THW_FGRR_TRL);
+		int MarkerIndex=MarkerList.GetNumVehicles();
+
+		System::Log("EINSAETZE: ORKANEINSATZ: Start");
+
+		if (nachhut)
+		{
+			Mission::PlayHint("Tiefausläufer des Orkans nähern sich Hamburg!");
+		}
+		else
+		{
+			Mission::PlayHint("Orkan über Hamburg! Beseitigen Sie alle Sturmschäden");
+		}
+
+		Audio::PlaySample("mod:Audio/FX/voices/hints/orkan.wav");
+		ScriptInterface::ShowBriefing();
+		ScriptInterface::OpenObjectives();
+
+		Baumliste=Game::GetGameObjectsWithPrefix("drzf_baum");
+
+		if (!nachhut)
+			Punkte=2000;
+		int k=rand()%10+7;
+		if (nachhut)
+			k=ChildID;
+		else
+			DummyObj.PushActionWait(ACTION_NEWLIST,5.0);
+
+		for (int n=k;n>0;n--)
+		{
+			DummyObj.PushActionWait(ACTION_APPEND,3+rand()%10);
+			DummyObj.PushActionExecuteCommand(ACTION_APPEND,"orkaneinsatz_throw",Caller,n,false);
+		}
+		System::Log("EINSAETZE: ORKANEINSATZ: Baeume verteilt");
+		Sturmzeit=disaster::hmin()+360+rand()%120;
+		if (!nachhut)
+		{
+			EinsatzID=Game::ShowEvent("Orkan über Hamburg!",Caller->GetPosition());
+			DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,5,false);
+			Sturmzeit=disaster::hmin()+360+rand()%200;
+		} else
+			Sturmzeit=disaster::hmin()+480+rand()%240;
+	}
+};
+
+object orkaneinsatz_throw : CommandScript
+{
+	orkaneinsatz_throw()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int n)
+	{
+		int x=disaster::wirf_baum(n);
+	}
+};
+
+object orkaneinsatz_clear_mark : CommandScript
+{
+	orkaneinsatz_clear_mark()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		if (Target->IsValid())
+		{
+			Caller->PushActionWait(ACTION_NEWLIST,10.0f);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"orkaneinsatz_clear_mark",Target,0,false);
+		} else
+			Caller->Hide();
+	}
+};
+
+class disaster : CommandScript
+{
+
+	int hmin()
+	{
+		int a,b,c;
+		Game::GetTime(a,b,c);
+		return a*100+b;
+	}
+
+	Vector incident_pos()
+	{
+		int i=Math::rand()%4+1;
+
+		if (!DeluxeVersion)
+			i++;
+
+		System::Log("EINSAETZE: ORKANEINSATZ: Pfad aussuchen");
+		char * bhf="             ";
+		char * zugname="Car 0%u";
+		int j=snprintf(bhf,13,zugname,i);
+		PathList pl(bhf);
+		Path path(pl.GetPath(0));
+		i=path.GetNumPoints()-2;
+		if (i>0)
+		{
+			Vector Crash=path.GetPoint(Math::rand()%i+1);
+		} else
+			Vector Crash=Vector (0,0,0);
+		return Crash;
+	}
+
+	int  wirf_baum(int mx)
+	{
+		char * fzkz[2];
+		fzkz[0]="orkan%u";
+		fzkz[1]="          ";
+		int erg;
+
+		System::Log("EINSAETZE: ORKANEINSATZ: Baum erzeugen");
+		Vector start=Baumliste.GetObject(rand()%Baumliste.GetNumObjects())->GetPosition();
+		int bx=rand()%6;
+		GameObject baum=Game::CreateObject(baume[bx],"orkan");
+		baum.SetFlag(OF_CUTABLE);
+		baum.SetFlag(OF_RECOVERABLE);
+		baum.ClearFlag(OF_PULLABLE);
+		Vector TargetPos=disaster::incident_pos();
+		baum.SetPosition(start);
+		Punkte+=250;
+		GameObject ziel=baum.GetClosestObjectInRange(2000,800,ACTOR_PERSON|ACTOR_VEHICLE);
+		if (ziel.IsValid() && ziel.IsInsideMap() && rand()%10>4)
+		{
+			Person zielp(&ziel);
+			if  (!zielp.IsInHouseWithGroundEntrance())
+			{
+				System::Log("EINSAETZE: ORKANEINSATZ: Ziel gefunden");
+				System::Log(ziel.GetName());
+				if (ziel.GetType()==ACTOR_PERSON)
+				{
+					Person zp(&ziel);
+					float val=rand()%400+300;
+					zp.Injure(INJUREREASON_ENERGY,true);
+					zp.SetLife(val);
+					float val=rand()%2+0.5;
+					zp.SetInjuredLifeDrain(val);
+					Punkte+=1000;
+				}
+				else
+				{
+					System::Log("EINSAETZE: ORKANEINSATZ: Baum trifft Fahrzeug");
+					erg=snprintf(fzkz[1],10,fzkz[0],mx);
+					Vehicle v(&ziel);
+					v.SetSpeed(0);
+					v.SetSmokeLevelDuration(30.0f);
+					v.SetSmoking(true);
+					v.PushActionWait(ACTION_NEWLIST,1.0);
+					if (!v.IsParking() && (rand()%10>6 || v.IsCivilCar() ))
+					{
+						System::Log("EINSAETZE: ORKAN: Eingeklemmte Person erzeugen");
+						int index = rand()%MAX_PROTONAMES;
+						Person p = Game::CreatePerson(prototypes[index], fzkz[1]);
+						v.SetEnclosedPerson(fzkz[1]);
+						float val=rand()%300+500;
+						p.Injure(INJUREREASON_ENERGY,true);
+						p.SetLife(val);
+						float val=rand()%2+0.5;
+						p.SetInjuredLifeDrain(val);
+						Punkte = Punkte + 750;
+					}
+					else Punkte = Punkte + 200;
+
+					v.SetSmoking(false);
+					if (rand()%10>7)
+					{
+//BASTI						baum.ClearFlag(OF_CUTABLE);
+						Punkte+=500;
+					}
+				}
+				baum.SetRotation(&ziel);
+//BASTI				ziel.SetFlag(OF_BLOCKED);
+				baum.SetUserData(ziel.GetID());
+				baum.SetPosition(ziel.GetPosition());
+			}
+			if (Game::IsMultiplayer())
+				baum.SetPlayerMP(1);
+			if (Game::IsMultiplayer())
+				ziel.SetPlayerMP(1);
+
+		}
+		else
+		{
+			System::Log("EINSAETZE: ORKANEINSATZ: Baum liegt nur auf der Strasse");
+			baum.SetPosition(TargetPos);
+		}
+
+		for (mx;mx<MarkerIndex && !MarkerList.GetVehicle(mx)->IsHidden();mx++);
+		if (mx>=MarkerIndex)
+			Vehicle marker=Game::CreateVehicle("mod:prototypes/vehicles/Sonstige/drzfeinsatz.e4p","marker");
+		else
+			Vehicle marker=MarkerList.GetVehicle(mx);
+		marker.SetPosition(baum.GetPosition());
+		marker.Show();
+		if (Game::IsMultiplayer())
+			marker.SetPlayerMP(1);
+		marker.PushActionWait(ACTION_NEWLIST,10.0f);
+		marker.PushActionExecuteCommand(ACTION_APPEND,"orkaneinsatz_clear_mark",&baum,0,false);
+		mx++;
+		return mx;
+	}
+};
+
+object deblock : CommandScript
+{
+	deblock()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Actor a=Game::GetActor(ChildID);
+		GameObject o(&a);
+		o.ClearFlag(OF_BLOCKED);
+	}
+};
+
+
+
+
+
+
+
+// EINSATZ ÖLSPUR:
+
+object oelspureinsatz : CommandScript
+{
+	oelspureinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		VehicleList Zivilfahrzeuge(VT_NOSQUAD);
+		int Fahrzeug=Math::rand()%Zivilfahrzeuge.GetNumVehicles();
+		Vehicle car=Zivilfahrzeuge.GetVehicle(Fahrzeug);
+		if (!car.IsParking() && car.IsCivilCar() && car.IsValid() && !car.IsDestroyed() && car.IsInsideMap())
+		{
+			const int MAX_PROTOTYPES = 6;
+			const char * prototypes[MAX_PROTOTYPES];
+			const char PROTOTYPE1[] = "mod:Prototypes/Vehicles/Civil - Cars/civilcar02_blue.e4p";
+			const char PROTOTYPE2[] = "mod:Prototypes/Vehicles/Civil - Cars/civilcar05_red.e4p";
+			const char PROTOTYPE3[] = "mod:Prototypes/Vehicles/Civil - Cars/civilcar27_green.e4p";
+			const char PROTOTYPE4[] = "mod:Prototypes/Vehicles/Civil - Construction/civiltruck12.e4p";
+			const char PROTOTYPE5[] = "mod:Prototypes/Vehicles/Civil - Trucks/civiltruck08_yellow.e4p";
+			const char PROTOTYPE6[] = "mod:Prototypes/Vehicles/Civil - Trucks/transporttruck01_white.e4p";
+			prototypes[0] = PROTOTYPE1;
+			prototypes[1] = PROTOTYPE2;
+			prototypes[2] = PROTOTYPE3;
+			prototypes[3] = PROTOTYPE4;
+			prototypes[4] = PROTOTYPE5;
+			prototypes[5] = PROTOTYPE6;
+			int index = Math::rand() % MAX_PROTOTYPES;
+			Vector Oelposition=car.GetPosition();
+	       		float r[9];
+        		car.GetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+			GameObject Oelspur = Game::CreateObject("mod:Prototypes/Objects/Hamburg Sonstige/oelspur.e4p", "oelspur");
+			Oelspur.SetPosition(Oelposition);
+			Oelspur.AssignCommand("oelspur_target");
+			Oelspur.AssignCommand("oelspur");
+			if (Game::IsMultiplayer())
+			Oelspur.SetPlayerMP(1);
+			Vehicle OelFzg = Game::CreateVehicle(prototypes[index], "oelspur");
+			OelFzg.SetParking(false);
+			OelFzg.SetPosition(Oelposition);
+                	OelFzg.SetRotation(r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]);
+			car.PushActionWait(ACTION_NEWLIST, 5);
+			car.PushActionDeleteOwner(ACTION_APPEND);
+			if (Game::IsMultiplayer())
+				OelFzg.SetPlayerMP(1);
+			OelFzg.SetEnergy(50.0f);
+			Punkte=750;
+			Audio::PlaySample("mod:Audio/FX/voices/hints/oelspur.wav");
+			Mission::PlayHint("THK: Öl oder Kraftstoff auf der Fahrbahn");
+			EinsatzID=Game::ShowEvent("THK: Öl oder Kraftstoff auf der Fahrbahn", Oelposition);
+			ScriptInterface::ShowBriefing();
+			ScriptInterface::OpenObjectives();
+			DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,6,false);
+		}
+		else
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+	}
+};
+
+object oelspur_beseitigen : CommandScript
+{
+	oelspur_beseitigen()
+	{
+		SetValidTargets(ACTOR_OBJECT);
+		SetIcon("oelspur_beseitigen");
+		SetCursor("oelspur_beseitigen");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Person p(Caller);
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		if (p.IsContaminated() || p.IsCarryingPerson() || p.IsLinkedWithPerson() || p.IsPulling() || p.IsEquipped() || p.GetEnteredCarID() !=-1)
+			return false;
+		if (p.HasCommand("Geraet_installiert"))
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Caller->IsValid())
+			return false;
+		GameObject obj(Target);
+		if (!obj.HasCommand("oelspur_target"))
+			return false;
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		VehicleList FzgListe(Caller->GetName());
+		Vehicle Fzg=FzgListe.GetVehicle(0);
+		Caller->SetCommandable(false);
+		Caller->PushActionMove(ACTION_NEWLIST, &Fzg, TARGET_EQUIPMENTDOOR);
+		Caller->PushActionTurnTo(ACTION_APPEND, &Fzg);
+		Caller->PushActionGetEquipment(ACTION_APPEND, &Fzg, EQUIP_FIREHOSE);
+		Caller->PushActionMove(ACTION_APPEND, Target, TARGET_ANY);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionRemoveEquipment(ACTION_APPEND);
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "Oelspur_Entfernen", Caller, 0, false);
+	}
+};
+
+object Oelspur_Entfernen : CommandScript
+{
+	Oelspur_Entfernen()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID == 0)
+		{
+			Vector Pos = Caller->GetPosition();
+			GameObject Bindemittel = Game::CreateObject("mod:Prototypes/Objects/Particles/rockdust01.e4p", "oelspur");
+			Bindemittel.SetPosition(Pos);
+			Bindemittel.AssignCommand("oelspur_target");
+			Caller->PushActionSwitchAnim(ACTION_APPEND, "pumping_Water");
+			Caller->PushActionWait(ACTION_APPEND, 8);
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "Oelspur_Entfernen", Caller, 1, false);
+		}
+
+		if (childID == 1)
+		{
+			Person CallerPerson(Caller);
+			GameObjectList OelspurObjekte("oelspur");
+			GameObject OelspurObjekt;
+			for (int i=0;(i<OelspurObjekte.GetNumObjects());i++)
+			{
+				OelspurObjekt=OelspurObjekte.GetObject(i);
+				if (OelspurObjekt.HasCommand("oelspur_target"))
+				{
+					OelspurObjekt.PushActionWait(ACTION_NEWLIST, 1);
+					OelspurObjekt.PushActionDeleteOwner(ACTION_APPEND);
+				}
+			}
+			CallerPerson.PushActionSwitchAnim(ACTION_APPEND, "idle");
+			CallerPerson.SetCommandable(true);
+		}
+	}
+};
+
+
+
+
+
+
+// EINSATZ VERKEHRSUNFALL
+
+object Verkehrsunfall : CommandScript
+{
+	Verkehrsunfall()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		System::Log("EINSAETZE: VERKEHRSUNFALL: Start");
+		Actor Unfallopfer;
+		VehicleList Zivilfahrzeuge(VT_NOSQUAD);
+		int Fahrzeug=Math::rand()%Zivilfahrzeuge.GetNumVehicles();
+		Vehicle Zielcar;
+		Zielcar=Zivilfahrzeuge.GetVehicle(Fahrzeug);
+		if (!Zielcar.IsParking() && Zielcar.IsCivilCar())
+		{
+			if (!Zielcar.IsValid() || Zielcar.IsDestroyed() || !Zielcar.IsInsideMap())
+			{
+				EinsatzID=-1;
+				EinsatzInit=0;
+				return;
+			} 
+			else
+			{
+				System::Log("EINSAETZE: VERKEHRSUNFALL: Zielfahrzeug ermittelt.");
+				Vector Pos;
+				Vector Posabc;
+				float rot[9];
+				float childRot[9];
+				int index;
+				float winkel;
+				bool gefahrgut=false;
+				int erg;
+		            	protovecs[0] = PROTOVECS1;
+        		    	protovecs[1] = PROTOVECS2;
+            			protovecs[2] = PROTOVECS3;
+	            		protovecs[3] = PROTOVECS4;
+	        	    	protovecs[4] = PROTOVECS5;
+        	    		protovecs[5] = PROTOVECS6;
+	        	    	protovecs[6] = PROTOVECS7;
+        	    		protovecs[7] = PROTOVECS8;
+	            		protovecs[8] = PROTOVECS9;
+		            	protovecs[9] = PROTOVECS10;
+        		    	protovecs[10] = PROTOVECS11;
+            			protovecs[11] = PROTOVECS12;
+		            	protovecs[12] = PROTOVECS13;
+				Vehicle car;
+
+				System::Log("EINSAETZE: VERKEHRSUNFALL: Verkehrsunfall-Art ermitteln.");
+				int VUArt=Math::rand()%2+1;
+				switch (VUArt)
+				{
+					case 1:
+					case 2:
+					case 3:
+						// GEFAHRGUT-UNFALL
+						System::Log("EINSAETZE: VERKEHRSUNFALL: Unfall mit Gefahrgut START");
+						int Auswahl=Math::rand()%2+1;
+						switch (Auswahl)
+						{
+							case 1:
+								Vehicle car = Game::CreateVehicle("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW1.e4p","FHHMODCrash");
+								break;
+							case 2:
+								Vehicle car = Game::CreateVehicle("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW2.e4p","FHHMODCrash");
+								break;
+							case 3:
+								Vehicle car = Game::CreateVehicle("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW3.e4p","FHHMODCrash");
+								break;
+						}
+						car.PushActionExecuteCommand(ACTION_NEWLIST,"gefahrgut_setzen",&car,0,false);
+						gefahrgut=true;
+						break;
+				}
+
+				System::Log("EINSAETZE: VERKEHRSUNFALL: Position des gespawnten Fahrzeugs setzen.");
+				car.SetPosition(Zielcar.GetPosition());
+				Zielcar.PushActionDeleteOwner(ACTION_NEWLIST);
+				Pos=car.GetPosition();
+				car.GetRotation(rot[0], rot[1], rot[2], rot[3], rot[4], rot[5], rot[6], rot[7], rot[8]);
+				winkel = rand()%180-90;
+				Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+				Math::MultiplyMatrices(childRot, rot);
+				car.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+				Punkte=3000;
+				car.SetFlag(OF_RECOVERABLE);
+				car.SetParking(false);
+				car.EnableBlinker(BLT_BOTH);
+				char * fzkz[2];
+				fzkz[0]="FHHMODCar%u";
+				fzkz[1]="          ";
+
+				//Fahrzeuge + Eingeklemmten erzeugen
+				int q = (rand()%2)+1;
+				for(int i = 0; i < q; i++)
+				{
+					System::Log("EINSAETZE: VERKEHRSUNFALL: Unfallfahrzeug erzeugen");
+					Posabc=Pos+Vector(((rand()%150)-75),((rand()%150)-75),0);
+					index = rand()%MAX_PROTOVECS;
+					winkel = rand()%180-90;
+					Math::EulerToMatrix(winkel, 0.f, 0.f, childRot);
+					Math::MultiplyMatrices(childRot, rot);
+
+					erg=snprintf(fzkz[1],10,fzkz[0],i);
+					Vehicle v = Game::CreateVehicle(protovecs[index], fzkz[1]);
+					v.SetRotation(childRot[0], childRot[1], childRot[2], childRot[3], childRot[4], childRot[5], childRot[6], childRot[7], childRot[8]);
+					Punkte=Punkte + 500;
+					int ZufallInt=rand()%11;
+
+					System::Log("EINSAETZE: VERKEHRSUNFALL: Eingeklemmte Person erzeugen");
+					int index = rand()%MAX_PROTONAMES;
+					Person p = Game::CreatePerson(prototypes[index], fzkz[1]);
+					v.SetEnclosedPerson(fzkz[1]);
+					float val=rand()%300+500;
+					p.Injure(INJUREREASON_ENERGY,true);
+					p.SetLife(val);
+					float val=rand()%2+0.5;
+					p.SetInjuredLifeDrain(val);
+					System::Log("EINSAETZE: VERKEHRSUNFALL: Eingeklemmte Person erzeugt!");
+					Punkte=Punkte+750;
+
+					System::Log("EINSAETZE: VERKEHRSUNFALL: Position setzen");
+					Game::FindFreePosition(&v,Posabc,300);
+					v.SetPosition(Posabc);
+					v.SetParking(false);
+					v.EnableBlinker(BLT_BOTH);
+					if (((Math::rand()%10)>6) && !gefahrgut)
+					{
+						System::Log("EINSAETZE: VERKEHRSUNFALL: Fahrzeug hat keine eingeklemmte Person, also Fahrzeug rauchen lassen");
+						v.SetSmoking(true);
+						v.SetSmokeLevelDuration(30.0f);
+					}
+					if (!v.HasEnclosedPerson())
+					{
+						System::Log("EINSAETZE: VERKEHRSUNFALL: Fahrzeug hat eingeklemmte Person, also Fahrzeug beschaedigen");
+						v.Damage(v.GetMaxEnergy()*0.5);
+					}
+					v.SetFlag(OF_RECOVERABLE);
+				}
+
+				Audio::PlaySample("mod:Audio/FX/voices/hints/crash.wav");
+
+				if (gefahrgut)
+					EinsatzID=Game::ShowEvent("THX: Verkehrsunfall mit Gefahrgut, Stoffnummer nicht bekannt", Posabc);
+				else
+					EinsatzID=Game::ShowEvent("Verkehrsunfall, unklare Lage", Posabc);
+
+				ScriptInterface::ShowBriefing();
+				DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,7,false);
+				System::Log("EINSAETZE: VERKEHRSUNFALL: Ende");
+			}
+			else
+			{
+				EinsatzID=-1;
+				EinsatzInit=0;
+				return;
+			}
+		}
+		else
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+	}
+};
+
+object thyheinsatz : CommandScript
+{
+	thyheinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		GameObjectList HRPatienten("hr_patient");
+		GameObject OldObj;
+		for (int i=0;(i<HRPatienten.GetNumObjects());i++)
+		{
+			OldObj=HRPatienten.GetObject(i);
+			if (OldObj.IsValid() && OldObj.IsInsideMap())
+			{
+				Person New = Game::CreatePerson("mod:Prototypes/Persons/Sonstige/hrpatient.e4p", "hoehenpatient");
+				New.SetPlacement(PLACEMENT_NONE);
+				New.SetAnimation("layingwounded02");
+				New.AssignCommand("hrettung_target");
+				Vector PatPos = OldObj.GetPosition();
+				float val=rand()%300+500;
+				New.SetPosition(PatPos);
+				New.Injure(INJUREREASON_ENERGY,true);
+				New.SetLife(val);
+				float val=rand()%2+0.5;
+				New.SetInjuredLifeDrain(val);
+				if (Game::IsMultiplayer())
+					New.SetPlayerMP(1);
+				Punkte=750;
+				Audio::PlaySample("mod:Audio/FX/voices/hints/tvnot.wav");
+				Mission::PlayHint("THY-H: Arbeiter auf Baukran zusammengebrochen");
+				EinsatzID=Game::ShowEvent("THY-H: Arbeiter auf Baukran zusammengebrochen", PatPos);
+				ScriptInterface::ShowBriefing();
+				ScriptInterface::OpenObjectives();
+				DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,8,false);
+			}
+			else
+			{
+				EinsatzID=-1;
+				EinsatzInit=0;
+				return;
+			}
+		}
+	}
+};
+
+object hoehenrettung : CommandScript
+{
+	hoehenrettung()
+	{
+		SetIcon("abseilen");
+		SetCursor("abseilen");
+		SetPriority(500);
+		SetValidTargets(ACTOR_PERSON);
+		SetSelfClickActivation(true);
+		SetPossibleEquipment(EQUIP_NONE);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		return true;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Person p(Caller);
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		if (p.IsContaminated() || p.IsCarryingPerson() || p.IsLinkedWithPerson() || p.IsPulling() || p.IsEquipped() || p.GetEnteredCarID() !=-1)
+			return false;
+		if (p.HasCommand("Geraet_installiert"))
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		if (obj.HasCommand("hrettung_target"))
+			return true;
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		obj.SetPlacement(PLACEMENT_NONE);
+		Caller->SetCommandable(false);
+		Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_ANY);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->SetPlacement(PLACEMENT_NONE);
+		Caller->PushActionSwitchAnim(ACTION_APPEND, "engineer_roping");
+		Caller->PushActionExecuteCommand(ACTION_APPEND, "hochseilen", Target, 0, false);
+	}
+};
+
+
+object hochseilen : CommandScript
+{
+	hochseilen()
+	{
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (childID == 0)
+		{
+			Vector oPos = Caller->GetPosition();
+			Caller->SetPosition(oPos+Vector(0,0,+1));
+			if (Caller->IsCollidingWithVirtualObject("hr_oben"))
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "hochseilen", Target, 1, false);
+			}
+			else
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "hochseilen", Target, 0, false);
+			}
+		}
+
+		if (childID == 1)
+		{
+			Caller->PushActionSwitchAnim(ACTION_APPEND, "kneeldown");
+			Caller->PushActionWait(ACTION_APPEND, 1);
+			Vector NewPos = Caller->GetPosition();
+			Target->SetPosition(NewPos);
+			GameObject OldTarget(Target);
+			Person OldPers(&OldTarget);
+			OldPers.SetAnimation("putobj");
+			Caller->PushActionSwitchAnim(ACTION_APPEND, "engineer_roping");
+			Caller->PushActionExecuteCommand(ACTION_APPEND, "abseilen", Target, 0, false);
+		}
+	}
+};
+
+object abseilen : CommandScript
+{
+	abseilen()
+	{
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject OTarget(Target);
+		if (childID == 0)
+		{
+			Vector oPos = Caller->GetPosition();
+			Caller->SetPosition(oPos+Vector(0,0,-1));
+			Target->SetPosition(oPos+Vector(0,0,-1));
+			if (Caller->IsCollidingWithVirtualObject("hr_unten") || OTarget.IsCollidingWithVirtualObject("hr_unten"))
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "abseilen", Target, 1, false);
+				OTarget.PushActionExecuteCommand(ACTION_APPEND, "abseilen", &OTarget, 1, false);
+			}
+			else
+			{
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "abseilen", Target, 0, false);
+				OTarget.PushActionExecuteCommand(ACTION_APPEND, "abseilen", &OTarget, 0, false);
+
+			}
+		}
+
+		if (childID == 1)
+		{
+			Caller->PushActionSwitchAnim(ACTION_APPEND, "idle");
+			Caller->SetPlacement(PLACEMENT_CUSTOM_PLACEMENT);
+			Caller->SetCommandable(true);
+			OTarget.SetPlacement(PLACEMENT_CUSTOM_PLACEMENT);
+			Caller->UpdatePlacement();
+			OTarget.UpdatePlacement();
+			Vector NewPos = Caller->GetPosition();
+			Game::FindFreePosition(&OTarget, NewPos);
+			Person PInj(&OTarget);
+			PInj.SetPosition(NewPos);
+			PInj.SetAnimation("layingwounded02");
+			PInj.RemoveCommand("hrettung_target");
+		}
+	}
+};
+
+object thflug3reinsatz : CommandScript
+{
+	thflug3reinsatz()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		OpenHouseList FlugobjektList("thflug3r");
+		OpenHouse Flugobjekt(FlugobjektList.GetOpenHouse(0));
+		if (FlugobjektList.GetNumOpenHouses()==0)
+		{
+			EinsatzID=-1;
+			EinsatzInit=0;
+			return;
+		}
+		Punkte = 2500;
+		int AlarmZufall=Math::rand()%20+1;
+		bool Alarm=AlarmZufall>16;
+		Flugobjekt.Show();
+		Flugobjekt.SetFlags(OF_TRANSPORTABLE|OF_RECOVERABLE);
+		char * Sitz = "                      ";
+		if (Alarm)
+		{
+			int Anzahl=Math::rand()%Flugobjekt.GetNumFireChilds();
+			FireObject FeuerObj=Flugobjekt.GetFireChild(Anzahl);
+			Flugobjekt.SetFireObjectBurning(FeuerObj.GetName());
+			Vector ZielPosition = FeuerObj.GetPosition();
+			Punkte = Punkte + 5000;
+			for(int i = 0; i < 13; i++)
+			{
+				snprintf(Sitz,10,"zielpos%u",i);
+				int index = rand()%MAX_PROTOTYPES;
+				Person p = Game::CreatePerson(prototypes[index], "thflug3r");
+				Vector FlugzeugPos = Flugobjekt.GetChildPosition(Sitz);
+				Game::FindAvailablePosition(&p,FlugzeugPos,40,true);
+				int HausID = Flugobjekt.GetID();
+				p.SetEnteredHouseID(HausID);
+				if (Game::IsMultiplayer())
+					p.SetPlayerMP(1);
+				p.SetPosition(FlugzeugPos);
+				p.Injure(INJUREREASON_ENERGY,true);
+				float Verletzung=rand()%300+600;
+				p.SetLife(Verletzung);
+				float Verletzung=rand()%2+0.7;
+				p.SetInjuredLifeDrain(Verletzung);
+				Punkte = Punkte+500;
+			}
+		}
+		Vector FlugPosition=Flugobjekt.GetPosition();
+		Audio::PlaySample("mod:Audio/FX/voices/hints/thflug3r.wav");
+		EinsatzID=Game::ShowEvent("THFLUG3R: Rauch in der Kabine, Maschine bereits gelandet", FlugPosition);
+		ScriptInterface::ShowBriefing();
+		DummyObj.PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",&DummyObj,9,false);
+	}
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// CHECKEINSAETZE: PRÜFEN AUF ABGESCHLOSSENE EINSÄTZE
+
+object CheckEinsaetze : CommandScript
+{
+	CheckEinsaetze()
+	{
+		SetGroupID(20);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int event)
+	{
+		bool ende=false;
+
+		System::Log("EINSAETZE: CHECKEINSAETZE: Start");
+		switch (event)
+		{
+			// EINSATZ TVNOT:
+			case 2:
+				//GameObjectList tvnotpatienten("tvnotperson");
+				//ende=(tvnotpatienten.GetNumObjects()==0);
+				ende=!pInjure.IsValid();
+				break;
+
+			// EINSATZ DRZF:
+			case 3:
+				GameObjectList baeume("drzfbaum");
+				ende=(baeume.GetNumObjects()==0);
+				break;
+
+			// EINSATZ STURMFLUT
+			case 4:
+				GameObjectList sandsaecke("Sandsaecke");
+				if (sandsaecke.GetNumObjects() > 0)
+				{
+					ende=true;
+					GameObject SandsaeckeObj;
+					for (int i=0;(i<sandsaecke.GetNumObjects());i++)
+					{
+						SandsaeckeObj=sandsaecke.GetObject(i);
+						SandsaeckeObj.PushActionWait(ACTION_NEWLIST, 20);
+						SandsaeckeObj.PushActionDeleteOwner(ACTION_APPEND);
+					}
+				} else ende=false;
+				break;
+
+			// EINSATZ ORKAN
+			case 5:
+				GameObjectList orkanobjekte("orkan");
+				ende=(orkanobjekte.GetNumObjects()==0);
+				System::Log("EINSAETZE: CHECKEINSAETZE: ORKAN läuft");
+				if (ende)
+					System::Log("EINSAETZE: CHECKEINSAETZE: ORKAN fertig");
+				else if (Sturmzeit<disaster::hmin())
+//BASTI					Caller->PushActionExecuteCommand(ACTION_INSERT,"orkaneinsatz",Caller,3+rand()%5,false);
+					Caller->PushActionExecuteCommand(ACTION_INSERT,"orkaneinsatz",Caller,4,false);
+				break;
+
+			// EINSATZ ÖLSPUR:
+			case 6:
+				GameObjectList OelspurObjekte("oelspur");
+				ende=(OelspurObjekte.GetNumObjects() == 0);
+				break;
+
+			//EINSATZ VERKEHRSUNFALL:
+			case 7:
+				GameObjectList pl=Game::GetGameObjectsWithPrefix("FHHMOD");
+				ende=(pl.GetNumObjects() == 0);
+				break;
+
+			//EINSATZ THY-H:
+			case 8:
+				GameObjectList pl("hoehenpatient");
+				ende=(pl.GetNumObjects() == 0);
+				break;
+
+			// EINSATZ THFLUG3R:
+			case 9:
+				GameObjectList ol("thflug3r");
+				if (ol.GetNumObjects() == 0)
+				ende=true;
+				else
+				{
+					ende=true;
+					for (int x=0;(x<ol.GetNumObjects()) && ende;x++)
+						ende=ende && ol.GetObject(x)->IsHidden();
+				}
+				break;
+
+			default:
+
+				break;
+		}
+
+		if (ende)
+		{
+			switch (event)
+			{
+				// EINSATZ TVNOT:
+				case 2:
+					Mission::PlayHint("Hervorragend. Der Einsatz TVNOT wurde erfolgreich abgeschlossen!");
+					break;
+
+				// EINSATZ DRZF:
+				case 3:
+					Mission::PlayHint("Hervorragend. Der Einsatz DRZF wurde erfolgreich abgeschlossen!");
+					break;
+
+				// EINSATZ STURMFLUT:
+				case 4:
+					Mission::PlayHint("Die Schutzmassnahmen gegen eine evtl. Sturmflut wurden erfolgreich durchgeführt!");
+					break;
+
+				// EINSATZ ORKAN:
+				case 5:
+					GameObjectList MarkerListe("marker");
+					if (MarkerListe.GetNumObjects() > 0)
+					{
+						GameObject MarkerObj;
+						for (int i=0;(i<MarkerListe.GetNumObjects());i++)
+						{
+							MarkerObj=MarkerListe.GetObject(i);
+							MarkerObj.PushActionWait(ACTION_NEWLIST, 1);
+							MarkerObj.PushActionDeleteOwner(ACTION_APPEND);
+						}
+					}
+					Mission::PlayHint("Hervorragend. Alle Orkanschäden wurden beseitigt.");
+					break;
+
+				// EINSATZ ÖLSPUR:
+				case 6:
+					GameObjectList OelObjekte("oelspur");
+					if (OelObjekte.GetNumObjects() > 0)
+					{
+						GameObject OelObj;
+						for (int i=0;(i<OelObjekte.GetNumObjects());i++)
+						{
+							OelObj=MOelObjekte.GetObject(i);
+							OelObj.PushActionWait(ACTION_NEWLIST, 1);
+							OelObj.PushActionDeleteOwner(ACTION_APPEND);
+						}
+					}
+					Mission::PlayHint("Die Ölspur wurde beseitigt.");
+					break;
+
+				// EINSATZ VERKEHRSUNFALL:
+				case 7:
+					Mission::PlayHint("Hervorragend. Der Einsatz Verkehrsunfall wurde abgeschlossen!");
+					break;
+
+				// EINSATZ THY-H:
+				case 8:
+					Mission::PlayHint("Hervorragend. Der Einsatz THY-H wurde abgeschlossen!");
+					break;
+
+				// EINSATZ THFLUG3R:
+				case 9:
+					Mission::PlayHint("Ausgezeichnet. Der Einsatz THFLUG3R wurde erfolgreich beendet!");
+					break;
+
+			}
+			Game::SetEventFinished(EinsatzID, ende, Punkte);
+			EinsatzID=-1;
+			EinsatzInit=0;
+		}
+		else
+		{
+			Caller->PushActionWait(ACTION_APPEND,5.0f);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"CheckEinsaetze",Target,event,false);
+		}
+
+		System::Log("EINSAETZE: CHECKEINSAETZE: Ende");
+	}
+};

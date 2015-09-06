@@ -1,0 +1,60 @@
+enum FXBitSet
+{
+	FXBIT_GLSL = 1,
+	FXBIT_FRAGSHADER = 2,
+	FXBIT_PBUFFER = 4,
+	FXBIT_VBO = 8,
+};
+
+void SetGFXFeatures()
+{
+	const char *Vendor = System::GetGFXVendorString();
+	const char *Extensions = System::GetGFXExtensionsString();
+	const char *Renderer = System::GetGFXRendererString();
+	
+	System::Log("Graphics system: %s %s", Vendor, Renderer);
+
+	int FXBits = 0;
+	
+	if(StrFind(Extensions, "shading_language"))
+	{
+		System::SetGFXFeatureFlag("GLSL", true);
+		FXBits |= FXBIT_GLSL;
+	}
+	
+	if(StrFind(Extensions, "fragment_shader"))
+	{
+		System::SetGFXFeatureFlag("FragmentShader", true);
+		FXBits |= FXBIT_FRAGSHADER;
+	}
+	
+	if(StrFind(Extensions, "NV_render_depth") || StrFind(Extensions, "ARB_depth_texture"))
+	{
+		System::SetGFXFeatureFlag("PBuffer", true);
+		FXBits |= FXBIT_PBUFFER;
+	}
+	
+	if(StrFind(Extensions, "vertex_buffer_object"))
+	{
+		System::SetGFXFeatureFlag("VBO", true);
+		FXBits |= FXBIT_VBO;
+	}
+	
+	if((FXBits & FXBIT_GLSL) && (FXBits & FXBIT_FRAGSHADER))
+		System::SetGFXFeatureFlag("Bloom", true);
+	else
+		System::SetGFXFeatureFlag("Bloom", false);
+	
+	if((FXBits & FXBIT_FRAGSHADER) && (FXBits & FXBIT_PBUFFER))
+		System::SetGFXFeatureFlag("Shadows", true);
+	else
+		System::SetGFXFeatureFlag("Shadows", false);
+}
+
+bool OnLoad()
+{
+	SetGFXFeatures();
+	Process::Kill();
+	
+	return true;
+}

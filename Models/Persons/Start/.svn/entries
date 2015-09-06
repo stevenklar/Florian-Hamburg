@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wc-entries
+   xmlns="svn:">
+<entry
+   committed-rev="1"
+   name=""
+   committed-date="2006-01-06T13:55:32.562500Z"
+   url="svn://svn.smtm.de/wem3/Models/Persons/Start"
+   last-author="m.thierschmidt"
+   kind="dir"
+   uuid="6fec1e0b-62d1-0849-af5c-593c40b02606"
+   repos="svn://svn.smtm.de/wem3"
+   revision="209"/>
+<entry
+   committed-rev="1"
+   name="start.V3O"
+   text-time="2006-01-16T21:35:03.578125Z"
+   committed-date="2006-01-06T13:55:32.562500Z"
+   checksum="b9fd26a403528a78b58a310938aaaa8f"
+   last-author="m.thierschmidt"
+   kind="file"
+   prop-time="2006-01-16T21:35:03.531250Z"/>
+<entry
+   committed-rev="1"
+   name="start.dds"
+   text-time="2006-01-16T21:35:03.593750Z"
+   committed-date="2006-01-06T13:55:32.562500Z"
+   checksum="15b01cee81156dc36f0842f8d753a7ee"
+   last-author="m.thierschmidt"
+   kind="file"
+   prop-time="2006-01-16T21:35:03.546875Z"/>
+</wc-entries>

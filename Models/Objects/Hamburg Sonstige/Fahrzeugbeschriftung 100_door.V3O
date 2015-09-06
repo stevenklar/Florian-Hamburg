@@ -1,0 +1,77 @@
+[VNUM=1.43]
+// <OPTIONS>
+// Exporter: vMax
+// Version: 4, 0, 0, 0
+// AdvancedMenu: 1
+// DisplayWindow: 0
+// DisplayModelViewer: 0
+// SaveInFile: 1
+// TextureBehaviour: 0
+// TextureSubdir: 
+// TextureUseProjDir: 1
+// DisplayMemory: 0
+// ResizeMesh: 0
+// MeshFactor: 1.000000
+// CenterMethod: 0
+// ExportHidden: 0
+// ExportPatches: 0
+// ExportSmoothing: 1
+// LodBias: 0
+// OptimizeMesh: 1
+// EpsVert: 0.000000
+// EpsUV: 0.000000
+// MeshCheckMethod: 1113
+// ExportBones: 0
+// ExportBlended: 1
+// BlendThreshold: 0.000000
+// MaxNumBones: 4
+// RemoveBones: 1
+// BoneCheckMethod: 1110
+// ExportDoubleSided: 1
+// ExportOpacity: 1
+// ExportSpecularity: 1
+// ExportEnvironment: 1
+// ExportBump: 1
+// ExportReflectivity: 0
+// ResizeTextures: 1017
+// ExportStrips: 1
+// StripPerformance: 0
+// StripObject: 0
+// StripRestriction: 0
+// MaxStripSize: 0.000000
+// SetMaxStripLength: 0
+// MaxStripLength: 0
+// SetMinStripLength: 0
+// MinStripLength: 0
+// SetMinSegLength: 0
+// MinSegLength: 0
+// ProjectPath:  - No project -
+// Granularity: 0
+// NumAnimations: 0
+// </OPTIONS>
+
+
+[NUMSURFACES=1]
+[NUMVERTICES=8]
+[NUMBLENDVERTS=0]
+[NUMPOLYGONS=4]
+[NUMBONES=0]
+[NUMMUSCLEANIMS=0]
+[NUMMUSCLEFRAMES=0]
+
+SRF, signchild10, 0, 0, 0, Fahrzeugbeschriftung 100_door.dds, 517, 2, 0, 0, , 0, 0, 0, 0, 0, 0, 0, 0
+D, 544, -3999, 37, 256, 0, 0, 7, 440, 0, 0, 0, 0
+D, 544, 3981, 37, 256, 0, 0, 1023, 440, 0, 0, 0, 0
+D, 544, -3999, 5533, 256, 0, 0, 7, 85, 0, 0, 0, 0
+D, 544, 3981, 5533, 256, 0, 0, 1023, 85, 0, 0, 0, 0
+D, 487, -3999, 37, -256, 0, 0, 8, 931, 0, 0, 0, 0
+D, 487, 3981, 37, -256, 0, 0, 1024, 931, 0, 0, 0, 0
+D, 487, -3999, 5533, -256, 0, 0, 8, 581, 0, 0, 0, 0
+D, 487, 3981, 5533, -256, 0, 0, 1024, 581, 0, 0, 0, 0
+P, 3, 2, 4, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 7, 8, 5, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 6, 5, 8, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+P, 3, 3, 1, 4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+BOX, 4, -40, 0, 6, 40, 56
+N, 0, 0, 0, 68
+CBOX,  4.876, -39.995,  0.378,  5.445, 39.813, 55.338

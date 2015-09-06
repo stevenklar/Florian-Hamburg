@@ -1,0 +1,579 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de		        */
+/*                                                                              */
+/* FUEHRUNG.SCRIPT - Scripts zur Führung und zum Befehlen von Einsatzkräften.   */
+/*                                                                              */
+/* Dieses Commandscript dient zur Führung von Einsatzkräften.			*/
+/*                                                                              */
+/* Ideen zum Script : Witchdoc					                */
+/* Änderungen von   : Eins Eins Zwo Modifications                               */
+/*                                                                              */
+/* 08.10.2008, SM,   Initial-Version                                            */
+/* 19.10.2008, SM,   Abspannen mittels el_zug_zurueck eingefügt.                */
+/* 16.06.2009, SM,   Lageerkundung entfernt, da zu oft BTD verursacht wurde	*/
+/*                                                                              */
+/* **************************************************************************** */
+
+object el_pa_ausruesten : CommandScript
+{
+	el_pa_ausruesten()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("ChangeToMask");
+		SetCursor("ChangeToMask");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+			return false;
+
+		Vehicle v(Target);
+		if (!v.HasCommand("f12_container_asgw"))
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		PersonList Gruppe(Caller->GetName());
+		Person p;
+		for (int i=0; (i<Gruppe.GetNumPersons());i++)
+		{
+			p = Gruppe.GetPerson(i);
+			if (p.HasCommand("ChangeToMask") && !p.IsInDLKBasket() && !p.IsContaminated() && !p.IsCarryingPerson() && !p.IsLinkedWithPerson() && !p.IsPulling() && !p.IsEquipped() && !p.HasCommand("Geraet_installiert"))
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"ChangeToMask",Target,0,false);
+		}
+	}
+};
+
+object el_csa_ausruesten : CommandScript
+{
+	el_csa_ausruesten()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetIcon("ChangeToABC");
+		SetCursor("ChangeToABC");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if( Caller->GetID() == Target->GetID() || Target->GetType() == ACTOR_HOUSE || Target->GetType() == ACTOR_OPEN_HOUSE || Target->GetType() == ACTOR_PERSON || Target->GetType() == ACTOR_OBJECT)
+			return false;
+
+		Vehicle v(Target);
+		if (!v.HasCommand("f32_wlf_container_dekon"))
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		PersonList Gruppe(Caller->GetName());
+		Person p;
+		for (int i=0; (i<Gruppe.GetNumPersons());i++)
+		{
+			p = Gruppe.GetPerson(i);
+			if (p.HasCommand("ChangeToABC") && !p.IsInDLKBasket() && !p.IsContaminated() && !p.IsCarryingPerson() && !p.IsLinkedWithPerson() && !p.IsPulling() && !p.IsEquipped() && !p.HasCommand("Geraet_installiert"))
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"ChangeToABC",Target,0,false);
+		}
+	}
+};
+
+object el_zug_zurueck : CommandScript
+{
+	el_zug_zurueck()
+	{
+		SetIcon("el_zug_zurueck");
+		SetCursor("el_zug_zurueck");
+		SetValidTargets(ACTOR_PERSON);
+		SetRestrictions(RESTRICT_SELFEXECUTE);
+//		SetPriority(70);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (Caller->HasName("f12_klf"))
+		{
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("12/0: Abspannen");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("12/0: Abspannen");
+			}
+			GameObjectList Zugliste=Caller->GetObjectsInRange(3000, ACTOR_VEHICLE);
+			for (int x=0;x<Zugliste.GetNumObjects();x++)
+			{
+				
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f12_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_nord"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_nord", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f12_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_sued"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_sued", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f12_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_west"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_west", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f12_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_ost"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_ost", Caller, 0, false);
+			}
+		}
+
+		if (Caller->HasName("f22_klf"))
+		{
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("22/0: Abspannen");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("22/0: Abspannen");
+			}
+			GameObjectList Zugliste=Caller->GetObjectsInRange(3000, ACTOR_VEHICLE);
+			for (int x=0;x<Zugliste.GetNumObjects();x++)
+			{
+
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f22_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_nord"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_nord", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f22_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_sued"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_sued", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f22_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_west"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_west", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f22_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_ost"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_ost", Caller, 0, false);
+			}
+		}
+
+		if (Caller->HasName("f23_klf"))
+		{
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("23/0: Abspannen");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("23/0: Abspannen");
+			}
+			GameObjectList Zugliste=Caller->GetObjectsInRange(3000, ACTOR_VEHICLE);
+			for (int x=0;x<Zugliste.GetNumObjects();x++)
+			{
+
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f23_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_nord"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_nord", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f23_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_sued"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_sued", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f23_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_west"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_west", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f23_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_ost"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_ost", Caller, 0, false);
+			}
+		}
+
+		if (Caller->HasName("f33_klf"))
+		{
+			if (Game::IsMultiplayer())
+			{
+                               	ScriptInterface::ShowMessageTickerTextForAll("33/0: Abspannen");
+			}
+			else
+			{
+				Game::ShowHelpTextWindow("33/0: Abspannen");
+			}
+			GameObjectList Zugliste=Caller->GetObjectsInRange(3000, ACTOR_VEHICLE);
+			for (int x=0;x<Zugliste.GetNumObjects();x++)
+			{
+
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f33_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_nord"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_nord", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f33_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_sued"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_sued", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f33_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_west"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_west", Caller, 0, false);
+				if (Zugliste.GetObject(x)->HasCommand("loeschzug_f33_teilnehmer") && Zugliste.GetObject(x)->HasCommand("aufsitzen_ost"))
+					Zugliste.GetObject(x)->PushActionExecuteCommand(ACTION_APPEND, "aufsitzen_ost", Caller, 0, false);
+			}
+		}
+	}
+};
+
+
+
+
+object lage_erkunden : CommandScript
+{
+	lage_erkunden()
+	{
+		//COMMAND AUSBLENDEN
+		SetGroupID(20);
+//		SetIcon("lage_erkunden");
+//		SetCursor("lage_erkunden");
+		SetValidTargets(ACTOR_FLOOR|ACTOR_OPEN_HOUSE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person p(Caller);
+		bool ok=true;
+		if (Target->GetType()==ACTOR_OPEN_HOUSE)
+			ok=Caller->HasCommand("ich_bin_ein_einsatzleiter") || Caller->HasCommand("ich_bin_ein_fuehrungsdienst");
+		return ok;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+/*
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OPEN_HOUSE:
+				Vector ziel=Target->GetPosition();
+ 				Game::FindFreePosition(Caller,ziel,100);
+				Caller->PushActionMove(ACTION_NEWLIST,ziel);
+				break;
+			default:
+				Vector ziel=Game::GetCommandPos();
+ 				Game::FindFreePosition(Caller,ziel,100);
+				Caller->PushActionMove(ACTION_NEWLIST,ziel);
+				break;
+		}
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"lage_erkunden2",Target,0,false);
+
+*/
+
+
+	}
+};
+
+
+char * lage[20];
+
+lage[0]=" ";
+lage[1]="- Feuer %s -";
+lage[2]="- %u beschädigte(s) Fahrzeug(e) -";
+lage[3]="- %u Eingeklemmte Person(en) -";
+lage[4]="- %u Verletzte Person(en) %s -";
+lage[5]="- Fahrzeug im Wasser -";
+lage[6]="- Hydrant gefunden -";
+lage[7]="- Gefahrguttransport mit leicht brennbarer Flüssigkeit -";
+lage[8]="- Gefahrguttransport mit Natrium -";
+lage[9]="- Gas-Transport -";
+lage[10]="- Munitionstransport -";
+lage[11]="- Gefahrguttransport mit ätzender giftiger Substanz -";
+lage[12]="- Gefahrguttransport mit radioaktivem Stoff -";
+lage[13]="- Austretender Stoff -";
+lage[14]="- %u Tote -";
+lage[15]="- Ölspur auf Fahrbahn -";
+lage[16]="- Baum/Ast auf Fahrbahn -";
+lage[17]=" ";
+lage[18]=" ";
+lage[19]=" ";
+
+object lage_erkunden2 : CommandScript
+{
+
+	int MsgCount=-1;
+	char *msg[11];
+	int q;
+	bool lmsg=false;
+
+	lage_erkunden2()
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return ok;
+	}
+
+	void add_message(int lm, int anz, bool building,bool nonums)
+	{
+		MsgCount++;
+		lmsg=lmsg || lm!=6;
+		msg[MsgCount]="                              ";
+		char *build=" im Gebäude ";
+		char *buf="                           ";
+		if (nonums)
+		{
+			if (building)
+			{
+				q=snprintf(msg[MsgCount],100,lage[lm],build);
+			}
+			else
+			{
+				q=snprintf(msg[MsgCount],100,lage[lm]," ");
+			}
+		}
+		else
+		{
+			if (building)
+			{
+				q=snprintf(msg[MsgCount],100,lage[lm],anz,build);
+			}
+			else
+			{
+				q=snprintf(msg[MsgCount],100,lage[lm],anz," ");
+			}
+		}
+	}
+
+	void meldung_abgeben(GameObject *Act)
+	{
+		char * Lagemeldung="                                                                                                                                                                                                         ";
+
+
+
+		// AUSWERTUNG DES ERKUNDENDEN:
+
+		if (Act->HasName("f12_klf"))
+			char *fz="12/0";
+		else if (Act->HasName("f12_hlf1"))
+			char *fz="12/1";
+		else if (Act->HasName("f12_hlf2"))
+			char *fz="12/2";
+		else if (Act->HasName("f12_bdienst"))
+			char *fz="B-Dienst 10/1";
+
+		else if (Act->HasName("f22_klf"))
+			char *fz="22/0";
+		else if (Act->HasName("f22_hlf1"))
+			char *fz="22/1";
+		else if (Act->HasName("f22_adienst"))
+			char *fz="A-Dienst";
+		else if (Act->HasName("f22_bfw"))
+			char *fz="BFW";
+
+		else if (Act->HasName("f33_klf"))
+			char *fz="33/0";
+		else if (Act->HasName("f33_hlf1"))
+			char *fz="33/1";
+
+		else if (Act->HasName("f3917_hlf1"))
+			char *fz="RotVe1";
+		else if (Act->HasName("f3917_hlf2"))
+			char *fz="RotVe2";
+
+		else if (Act->HasName("f32_udienst"))
+			char *fz="32 U-Dienst";
+
+		else if (Act->HasName("f23_klf"))
+			char *fz="23/0";
+		else if (Act->HasName("f23_hlf1"))
+			char *fz="23/1";
+		else if (Act->HasName("f23_hlf2"))
+			char *fz="23/2";
+		else if (Act->HasName("f23_bdienst"))
+			char *fz="B-Dienst 20/1";
+
+		else char *fz="FEZ";
+
+		// ENDE AUSWERTUNG DES ERKUNDENDEN
+
+
+		if (!lmsg)
+		{
+			snprintf(Lagemeldung,255,"%s : Keine Rückmeldung",fz);
+		}
+		else
+		{
+			snprintf(Lagemeldung,255,"%s : %s%s%s%s%s%s%s%s%s%s",fz,msg[0],msg[1],msg[2],msg[3],msg[4],msg[5],msg[6],msg[7],msg[8],msg[9]);
+		}
+
+		if (Game::IsMultiplayer())
+		{
+                       	ScriptInterface::ShowMessageTickerTextForAll(Lagemeldung);
+		}
+		else
+		{
+			//			Game::ShowHelpTextWindow(Lagemeldung);
+                       	ScriptInterface::ShowMessageTickerTextForAll(Lagemeldung);
+		}
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		MsgCount=-1;
+		for (int x=0;x<10;x++)
+			msg[x]=" ";
+
+		Person Erkunder(Caller);
+		VehicleList Fahrzeugliste(Caller->GetName());
+		Vehicle Fahrzeug=Fahrzeugliste.GetVehicle(0);
+
+		int Verletzte=0;
+		int Eingeklemmte=0;
+		int Fahrzeuge=0;
+		int Feuer=0;
+		int Wasser=0;
+		int Gefahrgut=0;
+		int Tote=0;
+		int Oelspur=0;
+		int DRZFBaum=0;
+
+		bool IsRettungsdienst=false;
+		bool IsPolizei=false;
+		bool IsFeuerwehr=false;
+
+
+		switch (Erkunder.GetBehaviour())
+		{
+			case BEHAVIOUR_SQUAD_RESCUE:
+				IsRettungsdienst=true;
+				break;
+			case BEHAVIOUR_SQUAD_POLICE:
+				IsPolizei=true;
+				break;
+			case BEHAVIOUR_SQUAD_FIREFIGHTER:
+				IsFeuerwehr=true;
+				break;
+		}
+
+		bool ImHaus=Erkunder.GetEnteredHouseID()>1;
+		GameObject *Hydrant;
+		GameObjectList ol;
+		GameObject *obj;
+		int HydrantenDistanz=100000;
+		bool Leck=false;
+		bool HasHydrant=false;
+
+		switch (Target->GetType())
+		{
+			case ACTOR_OPEN_HOUSE:
+				ol=Caller->GetObjectsInRange(1500,ACTOR_PERSON|ACTOR_OPEN_HOUSE);
+				break;
+			default:
+				ol=Caller->GetObjectsInRange(1500,ACTOR_OBJECT|ACTOR_VEHICLE|ACTOR_PERSON|ACTOR_HOUSE|ACTOR_OPEN_HOUSE);
+				break;
+		}
+
+		for (int i=0;i<ol.GetNumObjects();i++)
+		{
+			obj=*ol.GetObject(i);
+			switch(obj->GetType())
+			{
+				case ACTOR_PERSON:
+					Person p(obj);
+					if (p.GetEnteredHouseID()==Erkunder.GetEnteredHouseID() || (p.GetEnteredHouseID()==Target->GetID()))
+					{
+						if (p.IsInjured() || p.IsDead())
+						{
+							if (p.IsDead())
+								Tote++;
+							else
+								Verletzte++;
+						}
+						else
+						{
+						}
+					}
+					break;
+
+				case ACTOR_VEHICLE:
+					Vehicle v(obj);
+					if (v.HasEnclosedPerson() || v.GetEnergy()<v.GetMaxEnergy() || v.IsSmoking() || v.HasNamePrefix("ccar"))
+						Fahrzeuge++;
+					if (v.IsInsideWater())
+						Wasser++;
+					if (v.IsSmoking())
+						Feuer++;
+					if (v.HasEnclosedPerson() && !v.IsInsideWater())
+						Eingeklemmte++;
+					if (v.HasNamePrefix("oelspur"))
+						Oelspur++;
+
+				default:
+					if (obj->IsHydrant() && !obj->IsHydrantInUse())
+					{
+						if (HydrantenDistanz > Fahrzeug.DistanceXY(obj))
+						{
+							Hydrant=obj;
+							HydrantenDistanz=Fahrzeug.DistanceXY(obj);
+							HasHydrant=true;
+						}
+					}
+					if (obj->IsBurning() || obj->IsBurningInside())
+					{
+						Feuer++;
+						if (obj->GetType()==ACTOR_OPEN_HOUSE)
+							ImHaus=true;
+						if (obj->HasNamePrefix("thflug3r"))
+							ImHaus=false;
+					}
+					if (obj->HasCommand("gefahrgut"))
+					{
+						Vehicle v(obj);
+						Gefahrgut=v.GetUserData();
+						Leck=v.HasCommand("has_leck");
+					}
+					if (obj->HasNamePrefix("drzfbaum") || obj->HasNamePrefix("orkan"))
+					{
+						DRZFBaum++;
+					}
+
+					break;
+			}
+		}
+
+		if (Feuer>0 && IsFeuerwehr)
+			add_message(1,Feuer,ImHaus,true);
+
+		if (Fahrzeuge>0 && IsFeuerwehr)
+			add_message(2,Fahrzeuge,false,false);
+
+		if (Eingeklemmte>0 && IsFeuerwehr)
+			add_message(3,Eingeklemmte,false,false);
+
+		if (Verletzte)
+			add_message(4,Verletzte,ImHaus,false);
+
+		if (Wasser>0 && IsFeuerwehr)
+			add_message(5,Wasser,false,true);
+
+		if (HasHydrant && Feuer>0 && IsFeuerwehr)
+		{
+			add_message(6,0,false,false);
+			Hydrant->SetHighlighted(true);
+		}
+
+		if (Gefahrgut==301 && IsFeuerwehr)
+			add_message(7,Gefahrgut,false,true);
+
+		if (Gefahrgut==302 && IsFeuerwehr)
+			add_message(8,Gefahrgut,false,true);
+
+		if (Gefahrgut==303 && IsFeuerwehr)
+			add_message(9,Gefahrgut,false,true);
+
+		if (Gefahrgut==304 && IsFeuerwehr)
+			add_message(10,Gefahrgut,false,true);
+
+		if (Gefahrgut==305 && IsFeuerwehr)
+			add_message(11,Gefahrgut,false,true);
+
+		if (Gefahrgut==306 && IsFeuerwehr)
+			add_message(12,Gefahrgut,false,true);
+
+		if (Leck && IsFeuerwehr)
+			add_message(13,0,false,true);
+
+		if (Tote>0 && IsRettungsdienst)
+			add_message(14,Tote,false,false);
+
+		if (Oelspur>0 && IsFeuerwehr)
+			add_message(15, Oelspur, false, true);
+
+		if (DRZFBaum>0 && IsFeuerwehr)
+			add_message(16, DRZFBaum, false, true);
+
+		meldung_abgeben(Caller);
+	}
+};

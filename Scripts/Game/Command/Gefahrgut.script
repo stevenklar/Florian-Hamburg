@@ -1,0 +1,692 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* GEFAHRGUT.SCRIPT - Komplettscript für die Gefahrgut-Behandlung.	        */
+/*                                                                              */
+/* Dieses Commandscript beinhaltet alle für die Gefahrgut-Einsätze 		*/
+/* erforderlichen Scripts.							*/
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications, Witchdoc	                */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 06.08.2008, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+// Folgende Gefahrgüter sind mittels ChildID und UserData definiert:
+//
+// 301  : leicht entzündliche Flüssigkeit
+// 302  : Natrium
+// 303  : Gas
+// 304  : Explosiver Feststoff / Munition
+// 305  : Ätzende/giftige Substanz
+// 306  : Radioaktive Substanz
+
+
+// Folgende Aktionen werden "überwacht" und mit den entsprechenden Konsequenzen im GEFAHRGUT_CHECK Script "geahndet":
+//
+// 1   : Beaufschlagen mit Wasser
+// 2   : Einsatz der Rettungsschere
+// 3   : Aufladen durch das ASF / Heben mit dem Kran
+// 4   : Reparatur und/oder Entschärfen durch den Kampfmittelräumdienst, Leck abdichten
+// 399 : Zündquelle im Gefahrenbereich
+
+
+
+object gg_schild_lesen : CommandScript
+{
+	gg_schild_lesen()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetIcon("gg_schild_lesen");
+		SetCursor("gg_schild_lesen");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int ChildID)
+	{
+		Vehicle v(Target);
+		return v.HasCommand("gefahrgut");
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		int ggzahl = v.GetUserData();
+		if (ggzahl > 10)
+			ggzahl = ggzahl - 300;
+		switch(ggzahl)
+		{
+			case 1:
+				ScriptInterface::ShowNotice("FHHM_GG1");
+				break;
+			case 2:
+				ScriptInterface::ShowNotice("FHHM_GG2");
+				break;
+			case 3:
+				ScriptInterface::ShowNotice("FHHM_GG3");
+				break;
+			case 4:
+				ScriptInterface::ShowNotice("FHHM_GG4");
+				break;
+			case 5:
+				ScriptInterface::ShowNotice("FHHM_GG5");
+				break;
+			case 6:
+				ScriptInterface::ShowNotice("FHHM_GG6");
+				break;
+		}
+	}
+};
+
+object leck_abdichten : CommandScript
+{
+
+	leck_abdichten()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPriority(600);
+		SetSelfClickActivation(true);
+		SetIcon("leck_abdichten");
+		SetCursor("leck_abdichten");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Person p(Caller);
+		if (!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		if (p.IsContaminated() || p.IsCarryingPerson() || p.IsLinkedWithPerson() || p.IsPulling() || p.IsEquipped() || p.GetEnteredCarID() !=-1)
+			return false;
+		if (p.HasCommand("Geraet_installiert"))
+			return false;
+		return true;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() == Caller->GetID())
+			return false;
+		Vehicle v(Target);
+		return (v.HasCommand("gefahrgut") && v.HasCommand("has_leck"));
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		GameObject obj(Target);
+		Caller->PushActionMove(ACTION_APPEND,Target,TARGET_ANY);
+		Caller->PushActionSwitchAnim(ACTION_APPEND, "pumping_water");
+		Caller->PushActionWait(ACTION_APPEND, 2);
+		Caller->PushActionSwitchAnim(ACTION_APPEND, "idle");
+		obj.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_check",Caller,4,false);
+	}
+};
+
+object gefahrgut_setzen : CommandScript
+{
+	gefahrgut_setzen()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		v.PushActionWait(ACTION_NEWLIST,1);
+		int GefahrgutTyp;
+		if (childID == 0)
+			GefahrgutTyp = Math::rand()%6+1;
+			else
+			GefahrgutTyp = childID;
+		GefahrgutTyp = GefahrgutTyp + 300;
+
+		switch (GefahrgutTyp)
+		{
+			case 301 :		// leicht brennbare Flüssigkeit
+				v.ChangePrototype("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW3.e4p");
+				v.EnableBlinker(BLT_BOTH);
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				break;
+			case 302 : 		// Natrium
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				break;
+			case 303 :		// Austreten von Gas
+				v.ChangePrototype("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW3.e4p");
+				v.EnableBlinker(BLT_BOTH);
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				break;
+			case 304 :		// Munitionstransport
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				v.AssignCommand("kmrd_target");
+				break;
+			case 305 :		// Ätzende giftige Substanz
+				v.ChangePrototype("mod:prototypes/vehicles/Sonstige/Gefahrgut_LKW3.e4p");
+				v.EnableBlinker(BLT_BOTH);
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				break;
+			case 306 : 		// Radioaktive Substanz
+				v.SetUserData(GefahrgutTyp);
+				v.AssignCommand("gefahrgut");
+				v.SetChildEnabled("33",false);
+				v.SetChildEnabled("201",false);
+				v.SetChildEnabled("202",false);
+				v.SetChildEnabled("203",false);
+				v.SetChildEnabled("861",false);
+				v.SetChildEnabled("862",false);
+				v.SetChildEnabled("863",false);
+				break;
+		}
+
+		Person p = Game::CreatePerson("mod:Prototypes/Persons/Civil/civilman02_blue.e4p", "FHHMODLKWDriver");
+                 if (Game::IsMultiplayer())
+                 {
+                 	p.SetPlayerMP(Caller->GetPlayerMP());
+                 }
+		v.SetEnclosedPerson("FHHMODLKWDriver");
+		float val=rand()%300+500;
+		p.Injure(INJUREREASON_ENERGY,true);
+		p.SetLife(val);
+		float val=rand()%2+0.5;
+		p.SetInjuredLifeDrain(val);
+
+		if (Math::rand()%100 < 75)
+		{
+			v.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_leck",&v,GefahrgutTyp,false);
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_wirkung",&v,0,false);
+	}
+};
+
+object gefahrgut_leck : CommandScript
+{
+
+	gefahrgut_leck()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.Damage(v.GetMaxEnergy()/100*(Math::rand()%50+40));
+		int GefahrgutTyp=v.GetUserData();
+		switch (GefahrgutTyp)
+		{
+			case 301:
+				v.SetChildEnabled("33",true);
+				v.AssignCommand("has_leck");
+				break;
+			case 302:
+				break;
+			case 303:
+				v.SetChildEnabled("201",true);
+				v.SetChildEnabled("202",true);
+				v.SetChildEnabled("203",true);
+				v.AssignCommand("has_leck");
+				break;
+			case 304:
+				break;
+			case 305:
+				v.SetChildEnabled("861",true);
+				v.SetChildEnabled("862",true);
+				v.SetChildEnabled("863",true);
+				v.AssignCommand("has_leck");
+				break;
+			case 306:
+				v.AssignCommand("has_leck");
+				break;
+		}
+	}
+};
+
+object gefahrgut_check : CommandScript
+{
+	gefahrgut_check()
+	{
+		SetGroupID(20);
+		SetPriority(700);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int Aktion)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int Aktion)
+	{
+		Vehicle v(Caller);
+		GameObject p(Target);
+		if (!v.HasCommand("gefahrgut"))
+			return;
+		int GefahrgutTyp=v.GetUserData();
+		bool leck=v.HasCommand("has_leck");
+
+		if ((p.GetNumActions() > 1) && (Aktion != 399) && (!v.HasCommand("kmrd_target")))
+		{
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_check",Target,Aktion,false);
+		}
+
+		else
+
+		switch (Aktion)
+		{
+			case 1:
+				switch (GefahrgutTyp)
+				{
+					case 301 :		// Leicht entzündliche Flüssigkeit
+						v.AssignCommand("weniger_auswirkung");
+						break;
+					case 302 :		// Natrium
+						v.SetSmoking(true);
+						v.SetSmokeLevelDuration(5.0f);
+						v.PushActionWait(ACTION_NEWLIST,5);
+						v.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_explode",Target,0,false);
+						break;
+					case 303 :		// Gas
+						v.AssignCommand("weniger_auswirkung");
+						break;
+					case 305 :		// Ätzende giftige Substanz
+						v.AssignCommand("weniger_auswirkung");
+						break;
+					case 306 :		// Radioaktive Substanz
+						v.AssignCommand("weniger_auswirkung");
+						break;
+				}
+				break;
+			case 2:
+			case 3:
+			case 399:
+				switch (GefahrgutTyp)
+				{
+					case 301:
+						if (leck)
+						{
+							if ((Math::rand()%10)<8)
+							{
+								v.SetFireObjectBurning("Zuendung");
+								v.SetSmoking(true);
+								v.SetSmokeLevelDuration(10.0f);
+							}
+							else
+							{
+								v.SetFireObjectBurning("Zuendung");
+								v.PushActionWait(ACTION_NEWLIST,5);
+								v.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_explode",Target,0,false);
+							}
+						}
+						break;
+					case 303:
+						if (leck)
+						{
+							v.SetFireObjectBurning("Zuendung");
+							v.PushActionWait(ACTION_NEWLIST,10);
+							v.PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_explode",Target,0,false);
+						}
+						break;
+					case 304:
+						v.PushActionExecuteCommand(ACTION_NEWLIST,"gefahrgut_explode",Target,0,false);
+						break;
+				}
+				break;
+			case 4:
+				switch (GefahrgutTyp)
+				{
+					case 301:
+					case 303:
+					case 305:
+					case 306:
+						if (leck)
+						{
+							v.PushActionWait(ACTION_NEWLIST,1);
+							if (Game::IsMultiplayer())
+							{
+                                                         	ScriptInterface::ShowMessageTickerTextForAll("Das Leck wurde erfolgreich abgedichtet!");
+							}
+							else
+							{
+								Game::ShowHelpTextWindow("Das Leck wurde erfolgreich abgedichtet!");
+							}
+							v.RemoveCommand("has_leck");
+							v.SetChildEnabled("33",false);
+							v.SetChildEnabled("201",false);
+							v.SetChildEnabled("202",false);
+							v.SetChildEnabled("203",false);
+							v.SetChildEnabled("861",false);
+							v.SetChildEnabled("862",false);
+							v.SetChildEnabled("863",false);
+							v.SetUserData(400);
+							v.RemoveCommand("weniger_auswirkung");
+						}
+						break;
+					case 304:
+						if (p.IsCurrentAction("EActionRepair") && v.HasCommand("kmrd_target"))
+						{
+							Caller->PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_check",Target,Aktion,false);
+						}
+						else
+						{
+							v.SetUserData(0);
+							v.PushActionWait(ACTION_NEWLIST,1);
+							if (Game::IsMultiplayer())
+							{
+                                                         	ScriptInterface::ShowMessageTickerTextForAll("Die Munition wurde erfolgreich gesichert!");
+							}
+							else
+							{
+								Game::ShowHelpTextWindow("Die Munition wurde erfolgreich gesichert!");
+							}
+						}
+						break;
+				}
+				break;
+		}
+	}
+};
+
+object gefahrgut_wirkung : CommandScript
+{
+	gefahrgut_wirkung()
+	{
+		SetGroupID(20);
+		SetPriority(700);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		int GefahrgutTyp;
+		if (!v.HasCommand("gefahrgut"))
+			return;
+
+		GefahrgutTyp=v.GetUserData();
+
+		if (GefahrgutTyp == 0)
+		{
+			return;
+		}
+
+		if (GefahrgutTyp == 400)
+		{
+			return;
+		}
+
+		if ((v.GetEnergy() > 0.95*v.GetMaxEnergy()) && (GefahrgutTyp!=18))
+		{
+			return;
+		}
+
+		float KonsequenzRadius;
+		switch (GefahrgutTyp)
+		{
+			case 301:
+				KonsequenzRadius=150;
+				break;
+			case 302:
+				KonsequenzRadius=0;
+				break;
+			case 303:
+				KonsequenzRadius=200;
+				break;
+			case 304:
+				KonsequenzRadius=1;
+				break;
+			case 305:
+				KonsequenzRadius=200;
+				break;
+			case 306:
+				KonsequenzRadius=50;
+				break;
+			case 399:
+				KonsequenzRadius=150;
+				break;
+			case 400:
+				KonsequenzRadius=1;
+				break;
+			case 0:
+				KonsequenzRadius=1;
+				break;
+		}
+
+		int KonsequenzBereich;
+		KonsequenzBereich=1*KonsequenzRadius;
+		GameObjectList Umgebungsliste=Caller->GetObjectsInRange(KonsequenzBereich, ACTOR_PERSON | ACTOR_VEHICLE);
+		GameObject Objekt;
+		Vehicle UmgebungsFahrzeug;
+		Person UmgebungsPerson;
+		for (int i=0; i<Umgebungsliste.GetNumObjects(); i++)
+		{
+			Objekt=Umgebungsliste.GetObject(i);
+			switch (GefahrgutTyp)
+			{
+				case 301:
+					switch (Objekt.GetType())
+					{
+						case ACTOR_VEHICLE:
+							Vehicle UmgebungsFahrzeug(&Objekt);
+							if (!UmgebungsFahrzeug.IsFlagSet(OF_HAS_FIRE_EXTINGUISHER))
+							{
+// BASTI							if (UmgebungsFahrzeug.IsCurrentAction("EActionMove") || UmgebungsFahrzeug.IsCurrentAction("EActionMoveToPoint"))
+// BASTI							v.PushActionExecuteCommand(ACTION_INSERT,"gefahrgut_check",&v,399,false);
+							}
+							break;
+						case ACTOR_PERSON:
+							Person UmgebungsPerson(&Objekt);
+							if (UmgebungsPerson.IsCurrentAction("EActionUseEquipment"))
+							{
+								v.PushActionExecuteCommand(ACTION_INSERT,"gefahrgut_check",&v,399,false);
+							}
+							if (!UmgebungsPerson.HasCommand("ich_bin_ein_atemschutztraeger") && !UmgebungsPerson.HasCommand("ich_bin_ein_csa_traeger"))
+							{
+								if (v.HasCommand("weniger_auswirkung"))
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,25);
+								}
+								else
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,50);
+								}
+							}
+							break;
+					}
+					break;
+				case 302:
+					break;
+				case 303:
+				case 13:
+					switch (Objekt.GetType())
+					{
+						case ACTOR_VEHICLE:
+							break;
+						case ACTOR_PERSON:
+							Person UmgebungsPerson(&Objekt);
+							if (!UmgebungsPerson.HasCommand("ich_bin_ein_atemschutztraeger") && !UmgebungsPerson.HasCommand("ich_bin_ein_csa_traeger"))
+							{
+								if (v.HasCommand("weniger_auswirkung"))
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,35);
+								}
+								else
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,70);
+								}
+							}
+							break;
+					}
+					break;
+				case 304:
+					break;
+				case 305:
+				case 15:
+					switch (Objekt.GetType())
+					{
+						case ACTOR_VEHICLE:
+							Vehicle UmgebungsFahrzeug(&Objekt);
+							if (v.HasCommand("weniger_auswirkung"))
+							{
+								UmgebungsFahrzeug.Damage(UmgebungsFahrzeug.GetEnergy()*0.01);
+								UmgebungsFahrzeug.SetSmokeLevelDuration(30);
+							}
+							else
+							{
+								UmgebungsFahrzeug.Damage(UmgebungsFahrzeug.GetEnergy()*0.03);
+								UmgebungsFahrzeug.SetSmokeLevelDuration(30);
+							}
+							break;
+						case ACTOR_PERSON:
+							Person UmgebungsPerson(&Objekt);
+							if (!UmgebungsPerson.HasCommand("ich_bin_ein_csa_traeger"))
+							{
+								if (v.HasCommand("weniger_auswirkung"))
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,45);
+									UmgebungsPerson.Contaminate(CONTAMINATION_CHEMICAL);
+								}
+								else
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_CHEM,90);
+									UmgebungsPerson.Contaminate(CONTAMINATION_CHEMICAL);
+								}
+							}
+							break;
+					}
+					break;
+				case 306:
+				case 16:
+					switch (Objekt.GetType())
+					{
+						case ACTOR_VEHICLE:
+							break;
+						case ACTOR_PERSON:
+							Person UmgebungsPerson(&Objekt);
+							if (!UmgebungsPerson.HasCommand("ich_bin_ein_csa_traeger"))
+							{
+								if (v.HasCommand("weniger_auswirkung"))
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_ATOM,40);
+									UmgebungsPerson.Contaminate(CONTAMINATION_ATOMIC);
+								}
+								else
+								{
+									UmgebungsPerson.Hurt(INJUREREASON_CONTAM_ATOM,100);
+									UmgebungsPerson.Contaminate(CONTAMINATION_ATOMIC);
+								}
+							}
+							break;
+					}
+					break;
+			}
+		}
+		Caller->PushActionWait(ACTION_APPEND,1);
+		Caller->PushActionExecuteCommand(ACTION_APPEND,"gefahrgut_wirkung",Caller,0,false);
+	}
+};
+
+object gefahrgut_explode : CommandScript
+{
+	gefahrgut_explode()
+	{
+		SetGroupID(20);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		v.Explode();
+	}
+};
+
+object gefahrgut : CommandScript
+{
+	gefahrgut()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object has_leck : CommandScript
+{
+	has_leck()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};
+
+object weniger_auswirkung : CommandScript
+{
+	weniger_auswirkung()
+	{
+		SetGroupID(20);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+};

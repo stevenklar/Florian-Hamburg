@@ -1,0 +1,347 @@
+object Arrest : CommandScript
+{
+	Arrest()
+	{
+		SetValidTargets(ACTOR_PERSON|ACTOR_VEHICLE);
+		SetGroupID(CGROUP_ARREST);
+		SetRestrictions(RESTRICT_NOTINJURED | RESTRICT_NOTARRESTED | RESTRICT_NOTLINKED);
+		SetGroupLeader(true);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPriority(800);
+	}
+
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		Person p(Caller);
+		if(!p.IsValid() || p.IsLinkedWithPerson() || p.IsCarryingPerson() || p.GetEnteredCarID() != -1 || p.IsPhysicsSimulationEnabled())
+			return false;
+		return true;
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		if(!Caller->IsValid() || Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		return !p.IsLinkedWithPerson();
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+
+		if(!Caller->IsValid() ||  Caller->IsEquipped() && (Caller->GetEquipment() != EQUIP_PISTOL && Caller->GetEquipment()!=EQUIP_RIFLE) || !Target->IsValid() || Target->GetID() == Caller->GetID() )
+			return false;
+
+		Person p(Caller);
+		if(!p.IsValid() || p.IsLinkedWithPerson() || p.IsCarryingPerson() || p.GetEnteredCarID() != -1)
+			return false;
+
+		Person t(Target);
+
+		if (Target->GetType()==ACTOR_VEHICLE && v.GetVehicleType()==VT_GANGSTER_GETAWAY && Caller->IsEquipped() && v.GetNumPassengers()>0)
+			return true;
+
+		if(!t.IsValid() || t.GetState() != PERSONSTATE_NORMAL)
+			return false;
+
+		return (t.GetRole() != ROLE_ANIMAL && t.GetRole() != ROLE_SQUAD);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		Person t(Target);
+		if (Target->GetType()==ACTOR_PERSON && t.GetEnteredCarID()>1)
+		{
+			Caller->PushActionWait(ACTION_INSERT,0.2);
+			Caller->PushActionExecuteCommand(ACTION_INSERTAFTERFIRST,"Arrest",Target,0,false);
+			return;
+		}
+
+		Person p(Caller);
+		bool car=Target->GetType()==ACTOR_VEHICLE;
+		p.SetBehaviour(BEHAVIOUR_SQUAD_POLICE);
+
+		if (t.GetRole() == ROLE_ANIMAL)
+			return;
+
+		if (Target->GetType()==ACTOR_PERSON)
+			Caller->SetUserData(Target->GetID());
+
+		if (Caller->IsEquipped()) 
+		{
+			Vector CmdPos, TargetPos;
+			CmdPos = Target->GetPosition();
+			TargetPos = CmdPos;
+	
+			if (p.GetThrowPosition(TargetPos))
+			{
+				Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+				Caller->PushActionTurnTo(ACTION_APPEND, CmdPos);
+			} else
+				Caller->PushActionTurnTo(ACTION_NEWLIST, CmdPos);
+
+			if (Caller->GetEquipment()==EQUIP_PISTOL)
+				Caller->PushActionSwitchAnim(ACTION_APPEND, "pistoltarget");
+			else 
+				Caller->PushActionSwitchAnim(ACTION_APPEND, "shootrifle");
+
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"DUMMYArrest",Target,int(car),false);
+			
+		} 
+		else if (!car) 
+		{
+			VehicleList psl(Caller->GetName());
+			int ps=psl.GetVehicle(0)->GetID();
+			Caller->PushActionMove(ACTION_NEWLIST, Target, TARGET_FOLLOW);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"ArrestEm", Target, 0,false);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"sichern",Target,ps,false);
+		}
+	}
+};
+
+object ArrestEm: CommandScript
+{
+	ArrestEm()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int cid)
+	{
+		Person t(Target);
+		Person pol(Caller);
+		bool fight = (t.GetRole() == ROLE_GANGSTER);
+		if (t.GetBehaviour() == BEHAVIOUR_CIVILIAN_HOSTAGE)
+			fight = false;
+		System::Log("ArrestEm %s %u", Target->GetName(),int(fight));
+		if (pol.GetEnteredHouseID()==t.GetEnteredHouseID())
+			if (t.IsInjured())
+				Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Stabilize",Target,0,false);
+			else
+				Caller->PushActionArrest(ACTION_INSERT,Target,fight);
+	}
+};
+                       
+object DUMMYArrest : CommandScript
+{
+	DUMMYArrest()
+	{
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+	void auto_stellen(GameObject *Caller, Vehicle v)
+	{
+		System::Log("Auto Stellen");
+		v.PushActionWait(ACTION_NEWLIST,2.0);
+		v.RemoveCommand("crime");
+		if (v.GetNumPassengers()>0)
+		{
+			PersonList pl(v.GetPassengers());
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Arrest",pl.GetPerson(0),0,false);
+		}
+		v.PushActionExecuteCommand(ACTION_APPEND,"EmptyCar",&v,0,false);
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+
+		if (childID==1)
+		{
+			Vehicle v(Target);
+			auto_stellen(Caller,v);
+			return;
+		}
+		
+		Person t(Target);
+		Person p(Caller);
+
+		System::Log("DummyArrest Gangster %s Type %u",t.GetName(),t.GetBehaviour());
+		if ((t.GetRole() != ROLE_GANGSTER) || t.IsInjured())                                        //Zivilpersonen ergeben sich immer!
+		{
+                        t.ClearActions();
+			if (!t.IsInjured())
+			{
+	                  	t.PushActionSwitchAnim(ACTION_NEWLIST, "hostage_down");
+				t.PushActionWait(ACTION_APPEND, 20.0f);
+				t.PushActionExecuteCommand(ACTION_APPEND, "DummySleeper", Caller, 0, false);
+			} else
+				p.PushActionExecuteCommand(ACTION_NEWLIST,"Stabilize",Target,0,false);
+		} 
+		else 
+		{
+			System::Log("Dummy Arrest Ganster");
+			int chance=rand()%10;
+			bool surrender=false;
+			bool shooter=false;
+			bool shootnow=false;
+                	switch (t.GetBehaviour())
+			{
+				case BEHAVIOUR_GANGSTER_ATTACKALL:
+					shooter=true;
+					shootnow=chance%3==0;
+					t.SetBehaviour(BEHAVIOUR_GANGSTER_ATTACKSQUAD);
+					break:
+				case BEHAVIOUR_GANGSTER_GUARDHOSTAGE:
+				case BEHAVIOUR_GANGSTER_GUARDPASSAGE:
+					shooter=true;
+				case BEHAVIOUR_GANGSTER_ATTACKSQUAD:
+					shooter=t.IsEquipped();
+					shootnow=shooter && chance%3==0;
+					surrender=chance%3==0;
+					break;
+				case BEHAVIOUR_GANGSTER_ATTACKSQUAD_SMART:
+					shooter=t.IsEquipped();
+					shootnow=shooter && chance%3==0;
+				case BEHAVIOUR_GANGSTER_THROWSTONES:
+					surrender=chance%4==0;
+					break;
+				case BEHAVIOUR_GANGSTER_FISTFIGHT:
+					surrender=chance%2==0;
+					break;
+				case BEHAVIOUR_GANGSTER_THROWMOLOTOV:
+					surrender=chance%4==0;
+					break;
+				default:
+					surrender=chance%2==0;
+					shooter=chance%4==0;
+					if (!surrender)
+						if (shooter)
+						{
+							t.SetBehaviour(BEHAVIOUR_GANGSTER_GUARDPASSAGE);
+							shootnow=shooter && chance%4==0;
+						} else
+							t.SetBehaviour(BEHAVIOUR_GANGSTER_FISTFIGHT);
+				break;
+			}
+			if (surrender)
+			{
+				t.ClearActions();
+				t.SetRole(ROLE_CIVILIAN);
+				t.SetBehaviour(BEHAVIOUR_CIVILIAN_HOSTAGE);
+				t.SetDisableGangsterSymbol(false);
+				t.RemoveObjectPath();
+				t.PushActionSwitchAnim(ACTION_NEWLIST, "hostage_down");
+				if (t.IsEquipped())
+					t.PushActionRemoveEquipment(ACTION_INSERT);					
+				t.PushActionWait(ACTION_APPEND, 20.0f);
+				t.PushActionExecuteCommand(ACTION_APPEND, "DummySleeper", Caller, 0, false);
+			} else {
+				if (shooter)
+				{ 
+					if (!t.IsEquipped())
+						t.SetEquipment(EQUIP_PISTOL);
+					if (shootnow)
+						t.PushActionShoot(ACTION_INSERT,Caller);
+				}
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"WaffenEinsatz",Target,0,false);
+			}
+		}
+	}
+};
+
+
+object DummySleeper : CommandScript
+{
+	DummySleeper()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Person t(Target);
+		if (t.GetUserData()!=Caller->GetID() || (!t.IsCurrentAnimation("pistoltarget") && !t.IsCurrentAnimation("shootrifle")))
+			Caller->PushActionWait(ACTION_INSERT,0.1);
+		else {
+			Caller->PushActionWait(ACTION_NEWLIST,20.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"DummySleeper",Target,0,false);
+		}
+	}
+};
+
+object WaffenEinsatz : CommandScript
+{
+	WaffenEinsatz()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int buddy)
+	{
+		Person p;
+		if (!buddy)
+		{
+			Person p;
+			PersonList pl(Caller->GetName());
+			for (int x=0;x<pl.GetNumPersons();x++)
+			{
+				p=pl.GetPerson(x);
+				if (p.GetID()!=Caller->GetID() && p.GetUserData()==Target->GetID())
+					buddy=p.GetID();
+			}	
+		} 
+		else 
+		{
+			Actor a=Game::GetActor(buddy);
+			Person p(&a);
+		}
+		
+		Person t(Target);
+		bool schiessen=(t.IsCurrentAction("EActionShoot") || t.IsCurrentAction("EActionThrowMolotov") || t.IsCurrentAction("EActionThrowStone")) || (p.IsInjured() && !t.IsCurrentAnimation("hostage_down"));
+		if (schiessen)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"Shoot",Target,0,false);
+		else 
+		{
+			Caller->PushActionWait(ACTION_NEWLIST,1.0);
+			Caller->PushActionExecuteCommand(ACTION_APPEND,"WaffenEinsatz",Target,buddy,false);
+		}	
+	}
+};
+
+object sichern : CommandScript
+{
+	sichern()
+	{
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		System::Log ("POL Arrest : Sichern");
+		Person p(Caller);
+		Person t(Target);
+		Person Buddy;
+		PersonList pl(Caller->GetName());
+		for (int x=0;x<pl.GetNumPersons();x++)
+			if (pl.GetPerson(x)->GetUserData()==Target->GetID())
+			{
+				Buddy=pl.GetPerson(x);
+				Buddy.PushActionWait(ACTION_NEWLIST,0.5f); // Beschuss einstellen !
+			}
+		if (p.IsLinkedWithPerson())
+		{
+			Actor a=Game::GetActor(childID);
+			Caller->PushActionMove(ACTION_NEWLIST,&a,TARGET_ANY); // Verhaftete Person sichern	
+			Caller->SetUserData(0);
+			if (Buddy.IsValid() && !Buddy.IsInjured() && !Buddy.IsDead())
+			{
+				VehicleList FzgListe(Caller->GetName());
+				Vehicle Fzg = FzgListe.GetVehicle(0);
+				Caller->PushActionMove(ACTION_APPEND, &Fzg, TARGET_REARDOOR);
+				Caller->PushActionTurnTo(ACTION_APPEND, &Fzg);
+				Caller->PushActionPutInCar(ACTION_APPEND, &Fzg);
+			}
+		} 
+		else
+		{
+			p.PushActionExecuteCommand(ACTION_NEWLIST,"Stabilize",Target,0,false); // erste Hilfe vor Ort	
+			Caller->SetUserData(0);
+		}
+	}
+};

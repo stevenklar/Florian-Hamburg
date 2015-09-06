@@ -1,0 +1,71 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* USESHEARS.SCRIPT - Benutzen der Rettungsschere.                              */
+/*                                                                              */
+/* Dieses Commandscript ermöglicht es Einsatzkräften, die Rettungsschere zu	*/
+/* benutzen.                                                                    */
+/*                                                                              */
+/* Original-Script: Witchdoc			 			        */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 13.08.2008, SM,   Gefahrgut-Behandlung hinzugefügt                           */
+/* 17.08.2008, SM,   Wartezeit beim Einsatz der Schere von 6 auf 20 Sek. erhöht */
+/*                                                                              */
+/* **************************************************************************** */
+
+object UseShears : CommandScript
+{
+	UseShears()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetRestrictions(RESTRICT_NOTDESTROYED);
+		SetPossibleCallers(ACTOR_PERSON);
+		SetPossibleEquipment(EQUIP_SHEARS);
+		SetPossibleExists(CPE_CAR_W_ENCLOSED_PERSON);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || (Caller->GetID()==Target->GetID()) || Target->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		if (Caller->GetType() != ACTOR_PERSON)
+			return false;
+		Person p(Caller);
+		if(p.GetEnteredCarID() != -1)
+			return false;
+
+		Vehicle veh(Target);
+
+		bool quiet = true;
+		if (veh.IsPhysicsSimulationEnabled() && !veh.IsPhysicsFreezed())
+		{
+			Vector lin, ang;
+			veh.GetPhysicsLinearVelocity(0, lin);
+			veh.GetPhysicsLinearVelocity(0, ang);
+			if (lin.GetLen() > 8.0f && ang.GetLen() > 0.2f)
+				quiet = false;
+		}
+
+		if (!quiet && !veh.HasName("fgrr_signal"))
+			return false;
+
+		if (Caller->GetEquipment()==EQUIP_SHEARS && veh.IsValid() && veh.HasEnclosedPerson() && !veh.IsInsideWater()
+			&& !veh.IsCarried())
+			return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle gefahrgut(Target);
+		Vector TargetPos = gefahrgut.GetTargetPoint(Caller, TARGET_SHEARSDOOR);
+		Caller->PushActionMove(ACTION_NEWLIST, TargetPos);
+		Caller->PushActionTurnTo(ACTION_APPEND, Target);
+		Caller->PushActionUseEquipment(ACTION_APPEND, Target, childID, 20.0f);
+		gefahrgut.PushActionExecuteCommand(ACTION_INSERT,"gefahrgut_check",Caller,2,false);
+	}
+};

@@ -1,0 +1,194 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* BFW_LOGIK.SCRIPT - Diverse Scripts für den Befehlswagen F-22.  		*/
+/*                                                                              */
+/* Dieses Commandscript enthält alle Spezialscripts für den Befehlswagen F-22.  */
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications 				*/
+/*                                                                              */
+/* 01.07.2008, SM,   Initial-Version                                            */
+/* 06.07.2008, SM,   Befehlswagen ist jetzt unter Belegungstaste 6 erreichbar   */
+/* 16.06.2009, SM,   Bug beseitigt, dass Personen beim Abbauen alle auf einen	*/
+/* 		     Punkt gespawnt wurden und sich nicht bewegen liessen	*/
+/* 22.06.2009, SM,   Anpassungen auf neues Befehlswagen-Modell			*/
+/*                                                                              */
+/* **************************************************************************** */
+
+// ALLE FÜHRUNGSDIENSTE EINER EINSATZSTELLE VOR DEM BEFEHLSWAGEN SAMMELN
+
+object bfw_aufbauen : CommandScript
+{
+	bfw_aufbauen()
+ 	{                                                                                                         
+ 		SetIcon("wlfunload_f12");
+ 		SetCursor("wlfunload_f12");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}                                               
+
+	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		switch(childID)
+		{
+			case 0:
+				v.PushActionSwitchAnim(ACTION_NEWLIST, "Mast_aus");
+				v.PushActionExecuteCommand(ACTION_APPEND, "bfw_aufbauen", Caller, 1, false);
+			break;
+
+			case 1:
+				v.SetCommandable(false);
+				Vector Pos = v.GetPosition();
+				Audio::PlaySample("mod:Audio/FX/voices/hints/bfw_aufbauen.wav");
+				Mission::PlayHint("Führungsdienste am Befehlswagen melden!");
+				GameObjectList liste = Caller->GetObjectsInRange(30000.0f, ACTOR_PERSON);
+				v.SetMaxPassengers(4);
+				for(int i = 0; i < liste.GetNumObjects(); i++)
+				{
+					if(liste.GetObject(i)->HasCommand("ich_bin_ein_fuehrungsdienst"))
+					{
+						Person p = liste.GetObject(i);
+						p.SetCommandable(false);
+						p.PushActionMove(ACTION_NEWLIST, Pos);
+						p.PushActionTurnTo(ACTION_APPEND, &v);
+						p.PushActionEnterCar(ACTION_APPEND, &v);
+					}
+				}
+				Game::AddToGroup(&v,5);		
+				v.RemoveCommand("MoveTo");
+				v.RemoveCommand("goHome_ost");
+				v.RemoveCommand("VCmdSiren");
+				v.RemoveCommand("VCmdWarningLights");
+				v.RemoveCommand("VCmdUmfeld");
+				v.RemoveCommand("Funkfrei");
+				v.RemoveCommand("bfw_aufbauen");
+			
+				v.AssignCommand("VCmdUmfeld");
+				v.AssignCommand("rufe_hlf");
+				v.AssignCommand("rufe_dlk");
+				v.AssignCommand("alarm_adienst");
+				v.AssignCommand("rufe_loeschzug");
+				v.AssignCommand("rufe_gw");
+				v.AssignCommand("rufe_bdienst");
+				v.AssignCommand("rufe_udienst");
+				v.AssignCommand("rufe_rw");
+				v.AssignCommand("rufe_kran");
+				v.AssignCommand("rufe_kmrd");
+				v.AssignCommand("rufe_asgw");
+				v.AssignCommand("rufe_dekon");
+				v.AssignCommand("rufe_gwh");
+				v.AssignCommand("rufe_grtw");
+				v.AssignCommand("rufe_gwrd");
+				v.AssignCommand("rufe_segt");
+				v.AssignCommand("rufe_asf");
+				v.AssignCommand("rufe_entstoerdienst");
+				v.AssignCommand("rufe_thw");
+				v.AssignCommand("bfw_abbauen");
+				v.PlayAnimOpenDoor(DAT_SPECIAL, 3.0f);
+				v.SetCommandable(true);
+				v.EnableSpecialLights(true);
+				v.EnableTrafficLight(TLT_RED);
+			break;
+		}
+	}
+};	
+
+object bfw_abbauen : CommandScript
+{
+	bfw_abbauen()
+	{
+      		SetIcon("wlfupload_f12");
+	      	SetCursor("wlfupload_f12");
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(!Caller->IsValid() || !Target->IsValid() || Target->GetID() != Caller->GetID() || Caller->GetType() != ACTOR_VEHICLE)
+		return false;
+
+		if (Game::IsFreeplay() || Game::IsMultiplayer())
+		return true;
+
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		switch(childID)
+		{
+			case 0:
+				Mission::PlayHint("Führungsdienste werden entlassen und übernehmen die Einsatzstelle");
+				PersonList pTrans = v.GetPassengers();
+				for(int i=0; i<pTrans.GetNumPersons(); i++)
+				{
+					pTrans.GetPerson(i)->PushActionWait(ACTION_NEWLIST, 1);
+					pTrans.GetPerson(i)->PushActionLeaveCar(ACTION_APPEND, &v);
+					pTrans.GetPerson(i)->SetCommandable(true);
+				}
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "bfw_abbauen", Caller, 1, false);
+			break;
+
+			case 1:
+				Game::RemoveFromGroup(Caller,5);		
+				v.RemoveCommand("VCmdUmfeld");
+				v.RemoveCommand("rufe_hlf");
+				v.RemoveCommand("rufe_dlk");
+				v.RemoveCommand("rufe_loeschzug");
+				v.RemoveCommand("rufe_gw");
+				v.RemoveCommand("rufe_bdienst");
+				v.RemoveCommand("rufe_udienst");
+				v.RemoveCommand("rufe_rw");
+				v.RemoveCommand("rufe_kran");
+				v.RemoveCommand("rufe_kmrd");
+				v.RemoveCommand("rufe_asgw");
+				v.RemoveCommand("rufe_dekon");
+				v.RemoveCommand("rufe_gwh");
+				v.RemoveCommand("rufe_grtw");
+				v.RemoveCommand("rufe_gwrd");
+				v.RemoveCommand("rufe_segt");
+				v.RemoveCommand("rufe_asf");
+				v.RemoveCommand("rufe_entstoerdienst");
+				v.RemoveCommand("rufe_thw");
+				v.RemoveCommand("bfw_abbauen");
+				
+				v.AssignCommand("MoveTo");
+				v.AssignCommand("goHome_ost");
+				v.AssignCommand("VCmdSiren");
+				v.AssignCommand("VCmdWarningLights");
+				v.AssignCommand("VCmdUmfeld");
+				v.AssignCommand("Funkfrei");
+				v.AssignCommand("bfw_aufbauen");
+				v.PushActionExecuteCommand(ACTION_APPEND, "bfw_abbauen", Caller, 2, false);
+			break;
+
+			case 2:
+				v.SetMaxPassengers(0);
+				v.EnableSpecialLights(false);
+				v.EnableTrafficLight(TLT_NONE);
+				v.PushActionSwitchAnim(ACTION_APPEND, "Mast_ein");
+			break;
+		} 
+	}
+};

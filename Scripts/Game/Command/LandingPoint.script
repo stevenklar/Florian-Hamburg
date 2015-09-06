@@ -1,0 +1,158 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* LANDINGPOINT.SCRIPT - Erstellen eines Landepunktes für Hubschrauber.	        */
+/*                                                                              */
+/* Dieses Commandscript dient zum Erstellen eines Landepunktes für Hubschrauber */
+/* durch einen Polizisten.							*/
+/*                                                                              */
+/* Original-Script: Eins Eins Zwo Modifications			                */
+/*                                                                              */
+/* 31.07.2008, SM,   Initial-Version                                            */
+/*                                                                              */
+/* **************************************************************************** */
+
+const char * LANDINGPOINT_NAME[20];
+LANDINGPOINT_NAME[1] = "punkt0";
+LANDINGPOINT_NAME[2] = "punkt1";
+LANDINGPOINT_NAME[3] = "punkt2";
+LANDINGPOINT_NAME[4] = "punkt3";
+
+object Erstelle_Landepunkt : CommandScript
+{
+	Erstelle_Landepunkt()
+ 	{                                                                                                     
+ 		SetIcon("landepunkt_erstellen");
+ 		SetCursor("landepunkt_erstellen");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}                                               
+	
+	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE ||Caller->GetType() == ACTOR_PERSON)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{	
+		switch(childID)
+		{
+			case 0:
+				if(!Caller->HasCommand("hier_landen"))
+				{
+					Caller->AssignCommand("hier_landen");
+					Caller->RemoveCommand("Erstelle_Landepunkt");
+					Caller->AssignCommand("Landepunkt_Aufheben");
+					Vector start = Caller->GetPosition();
+					Vector a = start + Vector(0.0f,300.0f,0.0f);
+					Vector b = start + Vector(600.0f,300.0f,0.0f);
+					Vector c = start + Vector(600.0f,-300.0f,0.0f);
+					Vector d = start + Vector(0.0f,-300.0f,0.0f);
+					Caller->PushActionMove(ACTION_NEWLIST,a);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"Erstelle_Landepunkt",NULL,1,false);
+					Caller->PushActionMove(ACTION_APPEND,b);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"Erstelle_Landepunkt",NULL,2,false);
+					Caller->PushActionMove(ACTION_APPEND,c);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"Erstelle_Landepunkt",NULL,3,false);
+					Caller->PushActionMove(ACTION_APPEND,d);
+					Caller->PushActionExecuteCommand(ACTION_APPEND,"Erstelle_Landepunkt",NULL,4,false);
+					Caller->PushActionMove(ACTION_APPEND,start);
+					Caller->PushActionExecuteCommand(ACTION_APPEND, "Erstelle_Landepunkt", Caller, 99, false);
+					Caller->SetAnimation("curse");	
+				}
+			break;
+
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+				Vehicle v(Caller);
+				Vector set = Caller->GetPosition();
+				Vector neu = set + Vector(50.0f, 50.0f, 0.0f);	
+				GameObject Licht;
+		            	Licht = Game::CreateObject("mod:Prototypes/Vehicles/geraete/faltsignal1.e4p", LANDINGPOINT_NAME[childID]);
+				if (Licht.IsValid())
+				{
+					Licht.SetPosition(neu);
+					Licht.UpdatePlacement();	
+				}
+				Licht.SetSelectable(false);
+				int PlayerID = v.GetPlayerMP();
+				Licht.SetPlayerMP(PlayerID);
+				int UnitID = v.GetID();
+				Licht.SetUserData(UnitID);
+			break;
+
+			case 99:
+				Mission::PlayHint("Christoph 29 von Pol kommen! Landepunkt eingerichtet - Ende");
+			break;
+		}
+	}
+};
+
+object Landepunkt_Aufheben : CommandScript
+{
+	Landepunkt_Aufheben()
+ 	{                                           
+ 		SetIcon("landepunkt_aufheben");
+ 		SetCursor("landepunkt_aufheben");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+ 		SetPriority(90);
+	}                                               
+
+	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE ||Caller->GetType() == ACTOR_PERSON)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+ 
+ 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+		if (Caller->HasCommand("hier_landen"))
+	 		return true;
+
+		return false;
+ 	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{	
+		Caller->RemoveCommand("hier_landen");
+		Caller->AssignCommand("Erstelle_Landepunkt");
+		Caller->RemoveCommand("Landepunkt_Aufheben");
+		Caller->SetAnimation("idle");
+		Vehicle v(Caller);
+		int UnitID = v.GetID();
+		for(int q = 1; q < 5; q++)
+		{
+			GameObjectList list = Game::GetGameObjects(LANDINGPOINT_NAME[q]);
+			for(int i = 0; i < list.GetNumObjects(); i++)
+			{
+				GameObject *obj = list.GetObject(i);
+				if (obj->GetUserData() == UnitID)
+				{
+					obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				}
+			}	
+		}
+	}
+};

@@ -1,0 +1,242 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* FP_CHALLENGE.SCRIPT - Freeplay Startscript für den Herausforderungs-Modus	*/
+/*                                                                              */
+/* Dieses Missionsscript dient zum automatisierten spawnen der Fahrzeuge und    */
+/* Einrichten der Leitstelle sofort nach dem Freeplay-Start                     */
+/*                                                                              */
+/* 29.09.2007, SM,   Initial-Version                                            */
+/* 29.12.2007, SM,   Objekt "f03" hinzugefügt zum Beschaffen eines neuen        */
+/*		     Fahrzeugs, falls das alte zerstört wurde.                  */
+/* 02.01.2008, SM,   Reihenfolge der Alarmierungscommands für A- und B-Dienst   */
+/* 		     korrigiert (erst A-Dienst, dann B-Dienst im Menü).		*/
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt            */
+/* 06.02.2008, SM,   Alarmierung für Kripo und Polizei-MTW hinzugefügt.         */
+/* 19.02.2008, SM,   Initialisierung für Sturmflut-Einsätze hinzugefügt.        */
+/* 01.07.2008, SM,   Grüne Schatten werden automatisch deaktiviert.             */
+/* 28.07.2008, SM,   Radarfalle unsichtbar machen hinzugefügt.                  */
+/* 02.11.2008, SM,   Alarmierung THFLUG3R hinzugefügt.                          */
+/*                                                                              */
+/* **************************************************************************** */
+
+void Start()
+{
+		System::Log("..........:::::::::: Florian Hamburg Mod - Startup (Multiplayer Herausforderung) ::::::::::..........");
+
+		// Grüne Schatten deaktivieren
+		System::SetEnv("e4_doocclusion", 0);
+
+		Camera::SetMinCamZ(500.0f);
+		Camera::SetMaxCamZ(9000.0f);
+
+		Camera::SetMinCamPitch(20.0f);
+		Camera::SetMaxCamPitch(90.0f);
+
+		// Parameter fuer Fahrzeugerzeugung definieren
+		char *proto[];
+		char *kenn[];
+		Vehicle vec;
+		int MaxPass, maxTrans;
+		char *Act[];
+		Actor fz;
+		int i;
+		GameObject *ofz;
+		GameObjectList lfz;
+		ActorList fzl;
+
+
+ 		// Leistellen-Plätze einrichten
+		lfz=Game::GetGameObjects("fez_fw1");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->AssignCommand("alarm_notf");
+			ofz->AssignCommand("alarm_notfna");
+			ofz->AssignCommand("alarm_tvnot");
+			ofz->AssignCommand("alarm_feuk");
+			ofz->AssignCommand("alarm_feu");
+			ofz->AssignCommand("alarm_feuy");
+			ofz->AssignCommand("alarm_feubma");
+			ofz->AssignCommand("alarm_thk");
+			ofz->AssignCommand("alarm_thy");
+			ofz->AssignCommand("alarm_thway");
+			ofz->AssignCommand("alarm_thx");
+			ofz->AssignCommand("alarm_thflug3r");
+			ofz->AssignCommand("alarm_tier");
+
+            		// Auf Belegungstaste 1 setzen
+			Game::AddToGroup(ofz,0);
+
+			if (Game::IsMultiplayer())
+			{
+				ofz->SetPlayerMP(0);
+			}
+
+			System::Log("STARTSCRIPT: FEZ Platz 1 wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: FEZ Platz 1 wurde nicht gefunden ! ! ! !");
+
+		lfz=Game::GetGameObjects("fez_fw2");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->AssignCommand("rufe_klf");
+			ofz->AssignCommand("rufe_hlf");
+			ofz->AssignCommand("rufe_hubretter");
+			ofz->AssignCommand("rufe_ff");
+			ofz->AssignCommand("rufe_gw");
+			ofz->AssignCommand("rufe_rw");
+			ofz->AssignCommand("rufe_gwh");
+			ofz->AssignCommand("rufe_segt");
+			ofz->AssignCommand("rufe_kmrd");
+			ofz->AssignCommand("rufe_asgw");
+			ofz->AssignCommand("rufe_dekon");
+			ofz->AssignCommand("rufe_adienst");
+			ofz->AssignCommand("rufe_bdienst");
+			ofz->AssignCommand("rufe_udienst");
+			ofz->AssignCommand("rufe_bfw");
+			Game::AddToGroup(ofz,1);
+
+			if (Game::IsMultiplayer())
+			{
+				ofz->SetPlayerMP(1);
+			}
+
+			System::Log("STARTSCRIPT: FEZ Platz 2 wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: FEZ Platz 2 wurde nicht gefunden ! ! ! !");
+
+    		lfz=Game::GetGameObjects("fez_rd1");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->AssignCommand("rufe_rtw");
+			ofz->AssignCommand("rufe_nef");
+			ofz->AssignCommand("rufe_rth");
+			ofz->AssignCommand("rufe_grtw");
+			ofz->AssignCommand("rufe_gwrd");
+
+			if (Game::IsMultiplayer())
+			{
+				ofz->SetPlayerMP(2);
+			}
+
+			Game::AddToGroup(ofz,2);
+    			System::Log("STARTSCRIPT: FEZ Platz Rettungsdienst 1 wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: FEZ Platz 3 wurde nicht gefunden ! ! ! !");
+
+		lfz=Game::GetGameObjects("fez_pol1");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->AssignCommand("rufe_pol");
+			ofz->AssignCommand("rufe_mtw");
+			ofz->AssignCommand("rufe_kripo");
+			Game::AddToGroup(ofz,3);
+
+			if (Game::IsMultiplayer())
+			{
+				ofz->SetPlayerMP(3);
+			}
+
+			System::Log("STARTSCRIPT: FEZ Platz Polizei 1 wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: FEZ Platz 4 wurde nicht gefunden ! ! ! !");
+
+		lfz=Game::GetGameObjects("fez_sonstige1");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->AssignCommand("rufe_asf");
+			ofz->AssignCommand("rufe_kran");
+			ofz->AssignCommand("rufe_thw");
+			ofz->AssignCommand("rufe_vattenfall");
+			ofz->AssignCommand("rufe_entstoerdienst");
+			ofz->AssignCommand("Kamera_Aendern");
+			Game::AddToGroup(ofz,4);
+
+			if (Game::IsMultiplayer())
+			{
+				ofz->SetPlayerMP(3);
+			}
+
+			System::Log("STARTSCRIPT: FEZ Platz Sonstige 1 wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: FEZ Platz 5 wurde nicht gefunden ! ! ! !");
+
+		lfz=Game::GetGameObjects("f03");
+		if(lfz.GetNumObjects() > 0)
+		{
+			ofz = *lfz.GetObject(0);
+			ofz->Hide();
+			System::Log("STARTSCRIPT: F-03 Dummyobjekt wurde erfolgreich eingerichtet.");
+		}
+		else System::Log("STARTSCRIPT - FEHLER: F-03 Dummyobjekt wurde nicht gefunden ! ! ! !");
+
+
+
+
+
+		// Fahrzeuge erzeugen und auf der Map gemäß AUTOSKAUFEN.SCRIPT spawnen
+
+		System::Log("STARTSCRIPT: Fahrzeuge erzeugen");
+		for (int q=1;q<70;q++) // Gesamtanzahl der Fahrzeuge gemäss Autoskaufen-Script plus 1
+			{
+				ofz->PushActionExecuteCommand(ACTION_APPEND,"kaufen",ofz,(100+q),true);
+			}
+		System::Log("STARTSCRIPT: Fahrzeuge erzeugen - FERTIG");
+
+
+		// BMA-Einsätze initialisieren
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"bmaeinsatz_initialisierung",ofz,0,false);
+
+
+		// Sturmfluteinsätze initialisieren
+		ofz->PushActionExecuteCommand(ACTION_APPEND,"sturmfluteinsatz_initialisierung",ofz,0,false);
+
+
+		// Unbenutzte selbstprüfende Trigger aus Performance-Gründen deaktivieren
+		System::Log("STARTSCRIPT: Einsatzgebiets-Trigger deaktivieren");
+		Game::DeactivateTrigger("einsatzgebiet_nord_west");
+		Game::DeactivateTrigger("einsatzgebiet_nord_ost");
+		Game::DeactivateTrigger("einsatzgebiet_mitte");
+		Game::DeactivateTrigger("einsatzgebiet_sued");
+		Game::DeactivateTrigger("aufnahme");
+		Game::DeactivateTrigger("Schrottplatz");
+
+		// Radarfalle unsichtbar machen
+		PersonList Radarfallen("Speedtrap");
+		Person Falle = Radarfallen.GetPerson(0);
+		Falle.PushActionShowHide(ACTION_APPEND,true);
+
+		// THFLUG3R Objekte unsichtbar machen		
+		lfz=Game::GetGameObjectsWithPrefix("thflug3r");
+		for (q=0;q<lfz.GetNumObjects();q++)
+		{
+			lfz.GetObject(q)->ClearFlag(OF_TRANSPORTABLE);
+			lfz.GetObject(q)->SetFlags(OF_RECOVERABLE|OF_COOLABLE|OF_SHOOTABLE);
+			lfz.GetObject(q)->Hide();
+		}
+
+
+                // Meldung ausgeben
+		System::Log("STARTSCRIPT: Startscript-Durchlauf beendet");
+		Mission::StartCutScene();
+		Mission::ShowBlackBars();
+		Camera::SetCameraToLocation("Start");
+		Camera::StartTransition("Ende", 10.f);
+		Mission::HideBlackBars();
+		Mission::EndCutScene();
+		Audio::PlaySample("mod:Audio/FX/voices/florian_hamburg_kommen.wav");
+
+};
+
+bool OnLoad()
+{
+	Start();
+	Process::Kill();
+	return true;
+}

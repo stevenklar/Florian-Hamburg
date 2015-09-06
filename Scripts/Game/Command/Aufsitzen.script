@@ -1,0 +1,399 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* AUFSITZEN.SCRIPT - Aufsitzen-Script für Fahrzeuge versch. Ausrichtung.       */
+/*                                                                              */
+/* Dieses Commandscript regelt das Parken von Fahrzeugen in Richtung NORDEN,    */
+/* SÜDEN, WESTEN UND OSTEN.                                                     */
+/*                                                                              */
+/* Original-Script: Witchdoc, bergp83		 				*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 21.12.2007, SM,   Fehler beseitigt, dass von einem Notarzt behandelte        */
+/*                   Einsatzkräfte (UserData grösser als 0) nicht mehr          */
+/*		     automatisch aufgesessen haben. (Geraet_abbauen Command     */
+/*		     hinzugefügt.                                               */
+/* 06.07.2008, SM,   Haspeln werden jetzt abgenommen und draufgesetzt.          */
+/* 16.11.2008, SM,   Bug behoben, dass ein NA beim Aufsitzen einen              */
+/*		     Script-Error gezeigt hat.                                  */
+/*                                                                              */
+/* **************************************************************************** */
+
+object aufsitzen_nord : CommandScript
+{
+	aufsitzen_nord()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("aufsitzen");
+		SetIcon("aufsitzen");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		Vehicle Fz(Caller);
+		Fz.SetChildEnabled("haspel_racked", true);
+		Fz.SetChildEnabled("haspel_floor", false);
+		if (Caller->HasCommand("ich_bin_ein_hubretter"))
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen_nord",Caller,0,false);
+				return;
+			}
+		}
+
+
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			free = 1; 
+		}
+		if (Fz.HasCommand("bwk_nef") || Fz.HasCommand("asb_naw"))
+		{
+			free = 2; 
+		} 
+		if (Fz.HasCommand("f12_grtw"))
+		{
+			free = 4; 
+		} else 	
+		free = 1;
+
+
+
+		if (Fz.GetFreePassengers()< free)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"goHome_nord",Caller,1,false);
+		else {
+			PersonList pl(Caller->GetName());
+			for (int i=pl.GetNumPersons()-1; i > -1; i--)
+			{
+				if (i == 0)
+					cid=113; // Der letzte löst Status 3 und Rückfahrt Wache aus
+				Person *p=pl.GetPerson(i);
+				GameObject *obj(p);
+
+				if (!p->IsInjured())
+				{
+					if (p->GetUserData() > 0 && !p->HasCommand("ich_bin_ein_notarzt") && !p->HasCommand("Arrest"))
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"Geraet_abbauen",Caller,cid,false);
+					else
+					{
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+					}
+
+					obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+
+
+				} else {
+					if (i == 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"goHome_nord",Caller,cid,false);
+					}
+				}
+			}
+		}
+	}
+};
+
+
+
+
+
+
+
+object aufsitzen_sued : CommandScript
+{
+	aufsitzen_sued()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("aufsitzen");
+		SetIcon("aufsitzen");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		Vehicle Fz(Caller);
+		Fz.SetChildEnabled("haspel_racked", true);
+		Fz.SetChildEnabled("haspel_floor", false);
+		if (Caller->HasCommand("ich_bin_ein_hubretter"))
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen_sued",Caller,0,false);
+				return;
+			}
+		}
+
+
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			free = 1; 
+		}
+		if (Fz.HasCommand("bwk_nef") || Fz.HasCommand("asb_naw"))
+		{
+			free = 2; 
+		} 
+		if (Fz.HasCommand("f12_grtw"))
+		{
+			free = 4; 
+		} else 	
+		free = 1;
+
+
+
+
+		if (Fz.GetFreePassengers()< free)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_sued",Caller,1,false);
+		else {
+			PersonList pl(Caller->GetName());
+			for (int i=pl.GetNumPersons()-1; i > -1; i--)
+			{
+				if (i == 0)
+					cid=114; // Der letzte löst Status 3 und Rückfahrt Wache aus
+				Person *p=pl.GetPerson(i);
+				GameObject *obj(p);
+
+				if (!p->IsInjured())
+				{
+		
+					if (p->GetUserData() > 0 && !p->HasCommand("ich_bin_ein_notarzt") && !p->HasCommand("Arrest"))
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"Geraet_abbauen",Caller,cid,false);
+					else
+					{
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+					}
+					obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+				} else {
+					if (i == 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_sued",Caller,1,false);
+					}
+				}
+			}
+		}
+	}
+};
+
+
+
+
+
+
+
+
+
+object aufsitzen_west : CommandScript
+{
+	aufsitzen_west()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("aufsitzen");
+		SetIcon("aufsitzen");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		Vehicle Fz(Caller);
+		Fz.SetChildEnabled("haspel_racked", true);
+		Fz.SetChildEnabled("haspel_floor", false);
+		if (Caller->HasCommand("ich_bin_ein_hubretter"))
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen_west",Caller,0,false);
+				return;
+			}
+		}
+
+
+
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			free = 1; 
+		}
+		if (Fz.HasCommand("bwk_nef") || Fz.HasCommand("asb_naw"))
+		{
+			free = 2; 
+		} 
+		if (Fz.HasCommand("f12_grtw"))
+		{
+			free = 4; 
+		} else 	
+		free = 1;
+
+
+
+
+		if (Fz.GetFreePassengers()< free)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_west",Caller,1,false);
+		else {
+			PersonList pl(Caller->GetName());
+			for (int i=pl.GetNumPersons()-1; i > -1; i--)
+			{
+				if (i == 0)
+					cid=116; // Der letzte löst Status 3 und Rückfahrt Wache aus
+				Person *p=pl.GetPerson(i);
+				GameObject *obj(p);
+
+				if (!p->IsInjured())
+				{
+					if (p->GetUserData() > 0 && !p->HasCommand("ich_bin_ein_notarzt") && !p->HasCommand("Arrest"))
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"Geraet_abbauen",Caller,cid,false);
+					else
+					{
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+					}
+					obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+				} else {
+					if (i == 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_west",Caller,1,false);
+					}
+				}
+			}
+		}
+	}
+};
+
+
+
+
+
+
+
+
+object aufsitzen_ost : CommandScript
+{
+	aufsitzen_ost()
+	{
+		SetValidTargets(ACTOR_VEHICLE);
+		SetCursor("aufsitzen");
+		SetIcon("aufsitzen");
+		SetPriority(90);
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionWait(ACTION_NEWLIST,0.5f);
+		int cid=1; // Keine Automatik
+		int free;
+		Vehicle Fz(Caller);
+		Fz.SetChildEnabled("haspel_racked", true);
+		Fz.SetChildEnabled("haspel_floor", false);
+		if (Caller->HasCommand("ich_bin_ein_hubretter"))
+		{
+			Vector FzP=Game::GetCommandPos();
+			if (Fz.IsInstalled())
+			{
+				Caller->PushActionBasketDown(ACTION_NEWLIST, FzP);
+				Caller->PushActionExecuteCommand(ACTION_APPEND, "VCmdUmfeld", Caller, 2, false);
+				Caller->PushActionDeinstall(ACTION_APPEND);
+				Caller->AssignCommand("VCmdSiren");
+				Caller->PushActionExecuteCommand(ACTION_APPEND,"aufsitzen_ost",Caller,0,false);
+				return;
+			}
+		}
+
+
+		if (Fz.GetVehicleType() == VT_AMBULANCE_RTW)
+		{
+			free = 1; 
+		}
+		if (Fz.HasCommand("bwk_nef") || Fz.HasCommand("asb_naw"))
+		{
+			free = 2; 
+		} 
+		if (Fz.HasCommand("f12_grtw"))
+		{
+			free = 4; 
+		} else 	
+		free = 1;
+
+
+
+
+		if (Fz.GetFreePassengers()< free)
+			Caller->PushActionExecuteCommand(ACTION_NEWLIST,"gohome_ost",Caller,1,false);
+		else {
+			PersonList pl(Caller->GetName());
+			for (int i=pl.GetNumPersons()-1; i > -1; i--)
+			{
+				if (i == 0)
+					cid=115; // Der letzte löst Status 3 und Rückfahrt Wache aus
+				Person *p=pl.GetPerson(i);
+				GameObject *obj(p);
+
+				if (!p->IsInjured())
+				{
+					if (p->GetUserData() > 0 && !p->HasCommand("ich_bin_ein_notarzt") && !p->HasCommand("Arrest"))
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"Geraet_abbauen",Caller,cid,false);
+					else
+					{
+						obj->PushActionExecuteCommand(ACTION_NEWLIST,"RemoveFirehose",Caller,cid,false);
+					}
+					obj->PushActionExecuteCommand(ACTION_APPEND,"entercar",Caller,cid,false);
+				} else {
+					if (i == 0)
+					{
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"await_bording_personal",Caller,1,false);
+						Caller->PushActionExecuteCommand(ACTION_APPEND,"gohome_ost",Caller,1,false);
+					}
+				}
+			}
+		}
+	}
+};

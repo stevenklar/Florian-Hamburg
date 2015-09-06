@@ -1,0 +1,113 @@
+********************************************************************************************************************************************************************************************
+*													     										   *
+* F L O R I A N    H A M B U R G    M O D    -    C H A N G E L O G 					     										   *
+*													     										   *
+* Copyright © Eins Eins Zwo Modifications.								     										   *
+*													     										   *
+********************************************************************************************************************************************************************************************
+
+
+
+Legende:	+ | - Hinzugefügt
+--------
+		- | - Entfernt/Beseitigt
+
+		* | - Geändert
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| CHANGES 1.21 > 1.22:											      										    |
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  | 
+- | Lageerkundung durch den Einsatzleiter auf Grund der vermehrt auftretenden BTDs entfernt bis eine adäquate Lösung gefunden wurde
+* | Bug behoben, dass eine Verkehrskontrolle durch den MTW des Polizeikommissariates Altona nicht durchgeführt werden konnte
+* | Bug behoben, dass der Triblitz nicht korrekt umgeleitet hat
+* | Bug behoben, dass sich das THW nicht alarmieren liess
+* | Bug behoben, dass Fahrzeuge die sich nachts in der Wache befanden, die Scheinwerfer eingeschaltet hatten
+* | Bug beim Auf- und Abbauen des Befehlswagens beseitigt
+* | Bug behoben, dass die Alarmierung der FF entweder einen BTD oder einen Script-Error verursacht hat
+* | Bezeichnung des Status1-Buttons von "Status 3" auf "Status 1" geändert
+* | Einparkfehler des NEF F-22 am Krankenhaus behoben
+* | NEF-Wache am Krankenhaus optisch verbessert
+* | Einparkfehler des zivilen Kripo-Fahrzeugs behoben
+* | Einparkfehler der Streifenwagen der Davidwache behoben
+* | LED-Frontblitzer beim MTW der Polizei Nord hinzugefügt
+* | Fehler beseitigt, dass bestimmte Patienten nicht versorgt werden konnten, weil Sie vom Personal nicht erreicht werden
+* | Fehler beseitigt, dass bei TVNOT einige Türen nicht geöffnet werden konnten
++ | Polizei-Einsätze in den Freeplay-Parametern aktiviert
+* | Bei FEU2 wird, wie in real auch, statt des A-Dienstes ein B-Dienst alarmiert
+* | "Lücke" innerhalb des Auslegers des F-32 Kran beseitigt
+* | Script-Error bei Polizisten / Verhaftung behoben
++ | Schaltfläche (unter Gruppe/Taste 5) hinzugefügt zum Umschalten der Kamera- und Zoom-Einstellungen
++ | Unterstützung für den Deluxe-Modus hinzugefügt
+* | Frontblitzer der TMFs geändert
+* | Bug beseitigt dass BMA-Einsätze parallel aufliefen bzw. einige BMAs nicht korrekt zurückgestellt werden konnten
++ | Neues Modell für den F22-Befehlswagen hinzugefügt
+* | Einparkprobleme des F23-KLFs behoben
+* | Bug behoben, dass ein THY/Person droht zu springen im Süden der Map nicht korrekt abgeschlossen werden konnte
+* | Bug behoben, dass ein THY/Person droht zu springen in der Nähe der Reeperbahn nicht korrekt abgeschlossen werden konnte
+* | Positionen der Wenderohre an den TMF-Körben korrigiert
+* | Diverse Freeplay- und Multiplayer-Parameter angepasst
+
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+| CHANGES 1.2 > 1.21:											      										    |
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  | 
+* | Script-Error beim Notarzt behoben
+* | Bug behoben, dass verletztes Einsatzpersonal nicht abtransportiert werden konnte
+* | Bug behoben, dass der Fahrzeugführer eines HLFs sporadisch den Schnellangriff benutzt hat
+* | Bug behoben, dass STWs sich auf einer Streifenfahrt mit Zivilfahrzeugen verkeilt haben
+* | Bug behoben, dass die FF beim nach Hause schicken nicht mehr bewegt werden konnte
+* | F-22 Befehlswagen (BFW) rückt jetzt nur noch ab FEU3 aus.
+* | Bug behoben, dass Mitspieler im Multiplayer keine Einheiten alarmieren konnten
++ | Bei der Alarmierung von Streifenwagen wird immer der distanznächste Streifenwagen gerufen.
+* | Bug behoben, dass sich beim Aufbauen des F-33 Gerätewagen Rettungsdienst (GW RD) der Blaulichtbalken verändert hat.
+* | Bug behoben, dass beim Alarmieren von STWs die Scheinwerfer nicht aktiviert wurden.
+* | Bug behoben, dass beim Aktivieren einer STreifenfahrt bei STWs die Scheinwerfer nicht aktiviert wurden.
+* | Der RTH Christoph 29 kommt jetzt von ausserhalb.
+* | Bug behoben, dass der RTH sowie der BWK NAW keinen neuen Notarzt erhalten haben.
+* | Bug behoben, dass der MTW der Polizei Altona kreuz und quer zum Verkehrskontrollpunkt gefahren ist.
+* | Bug behoben, dass Polizeifahrzeuge zur Streifenfahrt kreuz und quer gefahren sind.
+* | Bug beim Zusatzeinsatz "Ölspur" behoben, dass sich das Fahrzeug teilweise nicht korrekt abschleppen ließ.
+- | Zusatzeinsatz "Orkan" auf Grund zu vieler Fehler bis eine adäquate Lösung gefunden wurde, entfernt.
+- | Hunde sowie den Einsatz "Tollwutalarm" entfernt.
+* | Bug behoben, dass das NEF F-14 immer kreuz und quer gefahren ist.
+* | F-12 RW aus THK und TVNOT Alarmierung entfernt.
+- | Automatische NEF-Nachalarmierung beim Behandeln durch Rettungsassistenten entfernt.
+- | PDRZF-Alarmierung entfernt.
+* | Diverse Verbesserungen innerhalb der Scripte bezüglich Ladezeit und Stabilität durchgeführt.
+* | Bug behoben, dass die Rettungsassistenten des Rettungshubschraubers im Krankenhaus verblieben sind.
+* | Verbesserungen/Vereinfachungen in der TMF-/DLK-Aufbau sowie -Abbau-Logik.
+* | Einige optische Verbesserungen der Fahrzeugskins und Fahrzeuglichter.
++ | Einige neue Verkehrsunfälle auf der Map hinzugefügt.
+* | Kleinere optische Verbesserungen auf der Map hinzugefügt.
+* | Notarzt-Begleitung von Patienten ist nur bei einem gewissen Grad nötig.
+* | Notarzt ist zur Stabilisierung nur ab einem gewissen Grad erforderlich.
++ | Beleuchtungs-Script komplett erneuert.
+* | Ausrüstung beim Absitzen von HLF-Besatzungen geändert.
+* | Bug behoben, dass zwei BMA-Alarmierungen gleichzeitig möglich waren und nicht abgeschlossen werden konnten.
+* | Bug behoben, dass Fahrzeuge beim Einsatz Ölspur nach dem Abschleppen wieder aufgetaucht sind.
+* | Türöffnungs-Logik bei einigen Fahrzeugen hinzugefügt.
+* | WLF-Script optimiert.
+* | Verkehrskontroll-Script optimiert.
+* | Multiplayer-Aufteilung geändert.
++ | Weitere BMA-Einsätze hinzugefügt.
++ | Brandgase und Druckbelüfter bei BMA-Einsätzen hinzugefügt.
+* | Zoom- und Kamera-Einstellungen per Script modifiziert.
+
+
+
+

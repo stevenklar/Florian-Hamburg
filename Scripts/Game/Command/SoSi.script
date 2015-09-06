@@ -1,0 +1,1131 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* SOSI.SCRIPT - Script für die Martinshörner.                                  */
+/*                                                                              */
+/* Dieses Commandscript regelt die Zuordnung des Martinshorn-Sounds (WAV) zum   */
+/* jeweiligen Fahrzeug.						                */
+/*                                                                              */
+/* Original-Script: Bass-Ti                                                     */
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 08.11.2007, SM,   Initial-Version                                            */
+/* 19.11.2007, SM,   SoSi-Töne aktualisiert                                     */
+/* 26.12.2007, SM,   SoSi-Ton Kran hinzugefügt                                  */
+/* 27.12.2007, SM,   SoSi-Zuordnung Polizei MTWk korrigiert                     */
+/* 02.01.2008, SM,   Unterstützung für Multiplayer-Modus hinzugefügt            */
+/* 26.02.2008, SM,   Fahrzeuge F23 Barmbek hinzugefügt                          */
+/* 19.05.2008, SM,   F-22 Befehlswagen hinzugefügt                              */
+/* 14.07.2008, SM,   Zivilfahrzeuge weichen jetzt bei aktiviertem Sosi aus,     */
+/*                   siehe unter DummyUpdatePos                                 */
+/*                                                                              */
+/* **************************************************************************** */
+
+
+//float OldSpeed;
+//Path OldPath;
+
+const char IMG[] = "sosi";
+
+const char EACTION_FINDPATH[] = "EActionFindPath";
+
+const char DUMMY_HASSIREN[] = "DUMMYHasSiren";
+const char DUMMY_UPDATEPOS[] = "DUMMYUpdatePos";
+const char DUMMY_FINDPATH[] = "DUMMYFindPath";
+
+const char CMD_MOVETO[] = "MoveTo";
+
+const char NAME_DUMMYOBJECT[] = "HelpingObjekt_Roger";
+
+
+
+
+// FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+
+ const char PROTO_F12_KLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_elw.e4p";
+ const char PROTO_F12_HLF1[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_hlf1.e4p";
+ const char PROTO_F12_HLF2[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_hlf2.e4p";
+ const char PROTO_F12_TMF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_tmf.e4p";
+ const char PROTO_F12_TMFB[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_tmfb.e4p";
+ const char PROTO_F12_RTWA[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f12_rtwa.e4p";
+ const char PROTO_F12_RTWB[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f12_rtwb.e4p";
+ const char PROTO_F12_RTWC[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f12_rtwc.e4p";
+ const char PROTO_F12_BDIENST[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_BDienst.e4p";
+ const char PROTO_F12_WLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_WLF.e4p";
+ const char PROTO_F12_WLF_ASGW[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f12_WLF_asgw.e4p";
+ const char PROTO_F12_GWH[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/F12_GWH.e4p";
+ const char PROTO_F12_RW[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/F12_RW.e4p";
+ const char PROTO_F12_GRTW[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f12_GRTW.e4p";
+
+
+
+// FEUER- UND RETTUNGSWACHE BERLINER TOR (F-22)
+
+ const char PROTO_F22_KLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_elw.e4p";
+ const char PROTO_F22_HLF1[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_hlf1.e4p";
+ const char PROTO_F22_TMF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_tmf.e4p";
+ const char PROTO_F22_TMFB[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_tmfb.e4p";
+ const char PROTO_F22_RTWA[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f22_rtwa.e4p";
+ const char PROTO_F22_RTWB[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f22_rtwb.e4p";
+ const char PROTO_F22_RTWC[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f22_rtwc.e4p";
+ const char PROTO_F22_GW[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_gw.e4p";
+ const char PROTO_F22_ADIENST[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_ADienst.e4p";
+ const char PROTO_F22_BFW[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f22_BFW.e4p";
+
+
+
+
+// FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+
+ const char PROTO_F33_KLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_elw.e4p";
+ const char PROTO_F33_HLF1[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_hlf1.e4p";
+ const char PROTO_F33_TMF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_tmf.e4p";
+ const char PROTO_F33_TMFB[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f33_tmfb.e4p";
+ const char PROTO_F33_RTWA[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f33_rtwa.e4p";
+ const char PROTO_F33_RTWK[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f33_rtwb.e4p";
+ const char PROTO_F33_GWRD[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f33_gwrd.e4p";
+ const char PROTO_F33_GWRDB[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f33_gwrd_aufgebaut.e4p";
+
+
+
+
+// FREIWILLIGE FEUERWEHR ROTHENBURGSORT/VEDDEL (F-3917)
+
+ const char PROTO_F3917_HLF1[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/ff_rotve_hlf1.e4p";
+ const char PROTO_F3917_HLF2[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/ff_rotve_hlf2.e4p";
+
+
+
+//FEUER- UND RETTUNGSWACHE BILLSTEDT (F-25) AUSSERHALB
+
+ const char PROTO_F25_SEGT[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/F25_GWT.e4p";
+
+
+
+// TECHNIK- UND UMWELTWACHE (F-32) (AUSSERHALB)
+
+ const char PROTO_F32_UDIENST[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_elw.e4p";
+ const char PROTO_F32_KMRD[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_kmrd.e4p";
+ const char PROTO_F32_WLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf.e4p";
+ const char PROTO_F32_WLF_DEKON[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f32_wlf_dekon.e4p";
+ const char PROTO_F32_KRAN[] = "mod:Prototypes/Vehicles/TEC/fgr.e4p";
+
+
+
+// NOTARZTEINSATZFAHRZEUGE F-22 (KRANKENHAUS), F-14 (AUSSERHALB) SOWIE DES BUNDESWEHR KRANKENHAUSES (AUSSERHALB)
+
+ const char PROTO_F14_NEF[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/kh_nefb.e4p";
+ const char PROTO_F22_NEF[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/kh_nefa.e4p";
+ const char PROTO_BWK_NEF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f21_NAW.e4p";
+
+
+
+// POLIZEIWACHE NORD
+
+ const char PROTO_POL_NORD_STW1[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw1.e4p";
+ const char PROTO_POL_NORD_STW2[] = "mod:Prototypes/Vehicles/Polizei Hamburg/POL_STW5.e4p";
+ const char PROTO_POL_NORD_STW3[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw2.e4p";
+ const char PROTO_POL_NORD_STW4[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw4.e4p";
+ const char PROTO_POL_NORD_MTW1[] = "mod:Prototypes/Vehicles/Polizei Hamburg/Pol_MTWk.e4p";
+ const char PROTO_POL_NORD_KRIPO1[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_mtw.e4p";
+ const char PROTO_POL_NORD_KRIPO2[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_kripo.e4p";
+
+
+
+// POLIZEIWACHE SÜD
+
+ const char PROTO_POL_SUED_STW1[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw3.e4p";
+ const char PROTO_POL_SUED_STW2[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw6.e4p";
+ const char PROTO_POL_SUED_STW3[] = "mod:Prototypes/Vehicles/Polizei Hamburg/pol_stw7.e4p";
+
+
+
+// TECHNISCHES HILFSWERK (AUSSERHALB)
+
+ const char PROTO_THW_ELW1[] = "mod:Prototypes/Vehicles/THW/ELW_body.e4p";
+ const char PROTO_THW_MLW1[] = "mod:Prototypes/Vehicles/THW/MLW_body.e4p";
+ const char PROTO_THW_UNIMOG1[] = "mod:Prototypes/Vehicles/THW/unimog_body.e4p";
+
+
+
+
+// SONSTIGE (ENTSTOERDIENST WASSER, ABSCHLEPPFAHRZEUGE, BESTATTER, VATTENFALL)
+
+ const char PROTO_ENTSTOERDIENST[] = "mod:Prototypes/Vehicles/THW/Wasser.e4p";
+ const char PROTO_ASF1[] = "mod:Prototypes/Vehicles/TEC/asfwtb.e4p";
+ const char PROTO_ASF11[] = "mod:Prototypes/Vehicles/TEC/asfwtb2.e4p";
+ const char PROTO_ASF2[] = "mod:Prototypes/Vehicles/TEC/asfwtc.e4p";
+ const char PROTO_ASF22[] = "mod:Prototypes/Vehicles/TEC/asfwtc2.e4p";
+ const char PROTO_BESTATTER[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/bsw.e4p";
+ const char PROTO_VATTENFALL[] = "mod:Prototypes/Vehicles/Sonstige/vattenfall.e4p";
+
+
+
+
+// ASB
+ const char PROTO_ASB_NAW[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/ASB1_body.e4p";
+ const char PROTO_ASB_RTW1[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/ASB2_body.e4p";
+ const char PROTO_ASB_RTW2[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/ASB3_body.e4p";
+ const char PROTO_ASB_RTW3[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/ASB4_body.e4p";
+
+
+
+
+
+// FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+ const char PROTO_F23_KLF[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f23_elw.e4p";
+ const char PROTO_F23_HLF1[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f23_hlf1.e4p";
+ const char PROTO_F23_HLF2[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f23_hlf2.e4p";
+ const char PROTO_F23_DLK[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/F23_DLK.e4p";
+ const char PROTO_F23_DLKB[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/F23_DLKB.e4p";
+ const char PROTO_F23_RTWA[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f23_rtwa.e4p";
+ const char PROTO_F23_RTWB[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f23_rtwb.e4p";
+ const char PROTO_F23_RTWC[] = "mod:Prototypes/Vehicles/Rettungsdienst Hamburg/f23_rtwc.e4p";
+ const char PROTO_F23_BDIENST[] = "mod:Prototypes/Vehicles/Feuerwehr Hamburg/f23_BDienst.e4p";
+
+
+int DummyGroup = 20;
+
+object VCmdSiren : CommandScript
+{
+	VCmdSiren()
+	{
+		SetIcon(IMG);
+		SetCursor(IMG);
+//		SetRestrictions(RESTRICT_SELFEXECUTE);
+		SetPriority(20);
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		if (!Caller->IsValid())
+			return false;
+
+		if (Caller->GetType() == ACTOR_VEHICLE)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		if (!Target->IsValid() || Target->GetID() != Caller->GetID())
+			return false;
+
+		if (!Caller->HasCommand(CMD_MOVETO) || Caller->GetType() != ACTOR_VEHICLE)
+			return false;
+
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+		if (!v.HasCommand(DUMMY_HASSIREN) && (childID != 2 && childID != 1))
+		{
+
+			int soundID;
+			int Zufall = rand()%2;
+			v.EnableBlueLights(true);
+			v.EnableHeadLights(true);
+			Vector CarPos = v.GetPosition();
+
+			// FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_KLF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_HLF1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_HLF2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_TMF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_TMFB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_RTWA) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_RTWB) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_RTWC) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_BDIENST) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_WLF) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft3.wav", CarPos, true);
+ 			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_WLF_ASGW) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft3.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_GWH) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_RW) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F12_GRTW) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+			// FEUER- UND RETTUNGSWACHE BERLINER TOR (F-22)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_KLF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_HLF1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_TMF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_TMFB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_RTWA) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_RTWB) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_RTWC) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_GW) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_ADIENST) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/topas.wav", CarPos, true);
+ 			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_BFW) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+			}
+
+
+
+
+
+
+
+
+
+			// FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_KLF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_HLF1) == 0)
+			{
+				soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_TMF) == 0)
+ 			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_TMFB) == 0)
+ 			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_RTWA) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_RTWK) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_GWRD) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F33_GWRDB) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+			}
+
+
+
+
+
+
+
+
+
+			// FREIWILLIGE FEUERWEHR ROTHENBURGSORT/VEDDEL (F-3917)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F3917_HLF1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F3917_HLF2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+
+			// FEUER- UND RETTUNGSWACHE BILLSTED (F-25) (AUSSERHALB)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F25_SEGT) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/topas.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+					break;
+				}
+ 			}
+
+
+
+
+
+
+
+
+
+
+
+			// TECHNIK- UND UMWELTWACHE (F-32) (AUSSERHALB)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F32_UDIENST) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F32_KMRD) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F32_WLF) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft3.wav", CarPos, true);
+			}
+			if (StrCompare(v.GetPrototypeFileName(), PROTO_F32_WLF_DEKON) == 0)
+			{
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft3.wav", CarPos, true);
+			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F32_KRAN) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+
+
+			// NOTARZTEINSATZFAHRZEUGE F-22 (KRANKENHAUS), F-14 (AUSSERHALB) SOWIE DES BUNDESWEHR-KRANKENHAUSES (AUSSERHALB)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F14_NEF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F22_NEF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella_nef.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_BWK_NEF) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/topas.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+
+
+
+
+
+
+
+
+
+			// POLIZEIWACHE NORD
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_STW1) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella2.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_STW2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_STW3) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_STW4) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_MTW1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_KRIPO1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stark.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_NORD_KRIPO2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stark.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+			// POLIZEIWACHE SÜD
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_SUED_STW1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_SUED_STW2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_POL_SUED_STW3) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella2.wav", CarPos, true);
+					break;
+				}
+ 			}
+
+
+
+
+
+			// TECHNISCHES HILFSWERK (AUSSERHALB)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_THW_ELW1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_THW_MLW1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft2.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_THW_UNIMOG1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stark.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+			// ENTSTOERDIENST WASSER
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ENTSTOERDIENST) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/stark.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+			// VATTENFALL
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_VATTENFALL) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+
+			// ABSCHLEPPFAHRZEUGE
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF11) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASF22) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_BESTATTER) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/Emsiren01.wav", CarPos, true);
+ 			}
+
+
+
+
+
+			// ASB
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASB_NAW) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASB_RTW1) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASB_RTW2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/topas.wav", CarPos, true);
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_ASB_RTW3) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella2.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+			// FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_KLF) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hella1.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_HLF1) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_HLF2) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_DLK) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_DLKB) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_RTWA) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_RTWB) == 0)
+ 			{
+				switch(Zufall)
+				{
+					case 0:
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+					break;
+
+					case 1:
+					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/pressluft1.wav", CarPos, true);
+					break;
+				}
+ 			}
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_RTWC) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+ 			}
+
+ 			if (StrCompare(v.GetPrototypeFileName(), PROTO_F23_BDIENST) == 0)
+ 			{
+ 					soundID = Audio::PlaySample3D("mod:Audio/FX/Sirens/hansch.wav", CarPos, true);
+ 			}
+
+
+
+
+
+
+
+				GameObject mDummy =  Game::CreateObject("mod:Prototypes/Objects/Misc/empty.e4p", NAME_DUMMYOBJECT);
+
+				if (Game::IsMultiplayer())
+				{
+					mDummy.SetPlayerMP(Caller->GetPlayerMP());
+				}
+
+				mDummy.Hide();
+				mDummy.SetPosition(CarPos);
+				mDummy.SetUserData(soundID);
+				mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, &v, soundID, false);
+				v.SetUserData(soundID);
+				v.AssignCommand(DUMMY_HASSIREN);
+
+			return;
+		}
+
+		if (v.HasCommand(DUMMY_HASSIREN))
+		{
+			if (childID == 1)
+			{
+				v.EnableBlueLights(false);
+			}
+
+			if (v.HasCommand(DUMMY_HASSIREN))
+			{
+				int ref = Caller->GetUserData();
+				Audio::StopSample(ref);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				for(int i=0; i<list.GetNumObjects(); i++)
+				{
+					GameObject *obj = list.GetObject(i);
+					if (obj->GetUserData() == ref)
+					{
+						int mSirTest = i;
+					}
+				}
+
+				GameObject *obj = list.GetObject(mSirTest);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+			}
+
+			return;
+		}
+	}
+};
+
+object DUMMYUpdatePos : CommandScript
+{
+	DUMMYUpdatePos()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Target);
+		GameObject mDummy(Caller);
+		Vector CarPos = v.GetPosition();
+
+		if (v.IsDestroyed() || !v.IsValid())
+		{
+			int ref = mDummy.GetUserData();
+			Audio::StopSample(ref);
+
+			mDummy.PushActionDeleteOwner(ACTION_NEWLIST);
+		} else
+		{
+			mDummy.SetPosition(CarPos);
+			Audio::UpdatePos(childID, CarPos, true);
+
+
+
+
+
+		// ZIVILFAHRZEUGE WEICHEN BEI AKTIVEM SOSI AUS:
+
+
+//			GameObjectList vehicle = v.GetObjectsInRange(900.0f, ACTOR_VEHICLE);
+//			for(int i = 0; i < vehicle.GetNumObjects(); i++)
+//			{
+//				Vehicle vec(vehicle.GetObject(i));
+//				if (vec.IsCivilCar() && !vec.IsParking() && !vec.HasCommand("fahreweg") && !vec.IsSmoking() && !vec.IsDestroyed() && vec.IsValid())
+//				{
+//					if (vec.GetEnergy() == vec.GetMaxEnergy())
+//					{
+//						vec.AssignCommand("fahreweg");
+//						OldPath=vec.GetObjectPath();
+//						OldSpeed = vec.GetSpeed();
+//						vec.SetSpeed(12.0f);
+//						vec.EnableBrakeLights(true);
+//						vec.EnableBlinker(BLT_RIGHT);
+//						float mat[9];
+//						vec.GetRotation(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6], mat[7], mat[8]);
+//						Vector offset(600.f, -150.f, 0.f);
+//						Math::RotateVector(offset.x, offset.y, offset.z, mat);
+//						Vector pos = vec.GetPosition();
+//						pos = pos + offset;
+//						if(Game::FindFreePosition(vehicle.GetObject(i), pos, 800.0f))
+//						{
+//							vec.PushActionMove(ACTION_NEWLIST, pos);
+//						}
+//						else if(!Game::FindFreePosition(vehicle.GetObject(i),pos,800.0f))
+//						{
+//							Vector offset(700.f, -1000.f, 0.f);
+//							Math::RotateVector(offset.x, offset.y, offset.z, mat);
+//							Vector pos = vec.GetPosition();
+//							pos = pos + offset;
+//							vec.PushActionMove(ACTION_NEWLIST, pos);
+//						}
+//						vec.PushActionExecuteCommand(ACTION_APPEND, "Reset", &vec, 0, false);
+//					}
+//				}
+//			}
+
+		// ENDE: ZIVILFAHRZEUGE WEICHEN BEI AKTIVEM SOSI AUS:
+
+
+
+
+			if (v.IsCurrentAction(EACTION_FINDPATH))
+			{
+				if (!v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.AssignCommand(DUMMY_FINDPATH);
+				}
+			}
+
+			mDummy.PushActionExecuteCommand(ACTION_NEWLIST, DUMMY_UPDATEPOS, Target, childID, false);
+		}
+
+		if (v.HasCommand(DUMMY_FINDPATH))
+		{
+			if (!v.IsCurrentAction(EACTION_FINDPATH) && v.GetNumActions() == 0)
+			{
+				v.RemoveCommand(DUMMY_HASSIREN);
+				v.RemoveCommand(DUMMY_FINDPATH);
+
+				int ref = Caller->GetUserData();
+				Audio::StopSample(ref);
+
+				GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+				for(int i = 0; i < list.GetNumObjects(); i++)
+				{
+					GameObject *obj = list.GetObject(i);
+					if (obj->GetUserData() == ref)
+					{
+						int mSirTest = i;
+
+						GameObject *obj = list.GetObject(mSirTest);
+						obj->PushActionDeleteOwner(ACTION_NEWLIST);
+						v.RemoveCommand(DUMMY_HASSIREN);
+						if (v.HasCommand(DUMMY_FINDPATH))
+						{
+							v.RemoveCommand(DUMMY_FINDPATH);
+						}
+					}
+				}
+			}
+		}
+	}
+};
+
+object DUMMYDisableSiren : CommandScript
+{
+	DUMMYDisableSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vehicle v(Caller);
+
+		if (childID == 1)
+		{
+			v.EnableBlueLights(false);
+		}
+
+		int ref = Caller->GetUserData();
+		Audio::StopSample(ref);
+
+		GameObjectList list = Game::GetGameObjects(NAME_DUMMYOBJECT);
+		for(int i = 0; i < list.GetNumObjects(); i++)
+		{
+			GameObject *obj = list.GetObject(i);
+			if (obj->GetUserData() == ref)
+			{
+				int mSirTest = i;
+
+				GameObject *obj = list.GetObject(mSirTest);
+				obj->PushActionDeleteOwner(ACTION_NEWLIST);
+				v.RemoveCommand(DUMMY_HASSIREN);
+				if (v.HasCommand(DUMMY_FINDPATH))
+				{
+					v.RemoveCommand(DUMMY_FINDPATH);
+				}
+			}
+		}
+	}
+};
+
+object DUMMYFindPath : CommandScript
+{
+	DUMMYFindPath()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+  	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+object DUMMYHasSiren : CommandScript
+{
+	DUMMYHasSiren()
+	{
+		SetGroupID(DummyGroup);
+	}
+
+	bool CheckGroupVisibility(GameObject *Caller)
+	{
+		return false;
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return false;
+	}
+
+
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return false;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	}
+};
+
+
+
+
+
+
+//object fahreweg : CommandScript
+//{
+//	fahreweg()
+//	{
+//		SetGroupID(20);
+//	}
+//
+//	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+//	{
+//		return false;
+//	}
+//};
+
+//object Reset : CommandScript
+//{
+//	Reset()
+//	{
+//		SetGroupID(20);
+//	}
+//
+//	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+//	{
+//		return false;
+//	}
+//
+//	void PushActions(GameObject *Caller, Actor *Target, int childID)
+//	{
+//		Vehicle v(Caller);
+//		v.RemoveCommand("fahreweg");
+//		v.EnableBlinker(BLT_NONE);
+//		v.SetSpeed(OldSpeed);
+//		v.PushActionWait(ACTION_NEWLIST, 1.0f);
+//		v.PushActionExecuteCommand(ACTION_NEWLIST, "ReturnToPath", &v, 0, false);
+//	}
+//};
+
+//object ReturnToPath : CommandScript
+//{
+//	ReturnToPath()
+//	{
+//		SetGroupID(20);
+//	}
+//
+//	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+//	{
+//		return false;
+//	}
+//
+//	void PushActions(GameObject *Caller, Actor *Target, int childID)
+//	{
+//		Caller->PushActionUsePath(ACTION_NEWLIST, &OldPath, 5.0f);
+//	}
+//};

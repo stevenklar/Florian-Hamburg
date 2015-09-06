@@ -1,0 +1,151 @@
+/* **************************************************************************** */
+/* Erstellt von: Florian KO 12/2                                                */ 
+/* **************************************************************************** */
+const char * aus_proto="mod:Prototypes/Vehicles/Dummy/Ausrichter.e4p";
+
+object ausrichter_setzen : CommandScript
+{
+	ausrichter_setzen()
+	{
+		SetIcon("sendto");
+		SetCursor("sendto");
+		SetValidTargets(ACTOR_STREET|ACTOR_FLOOR);
+	}
+	bool CheckPossible(GameObject *Caller){
+		return Caller->IsCommandEnabled("MoveTo");
+	}
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		char ber_nam[64];
+		snprintf(ber_nam,64,"Ausr_%i",Caller->GetID());
+		if(Game::GetGameObjects(ber_nam).GetNumObjects()>0)Game::GetGameObjects(ber_nam).GetObject(0)->PushActionDeleteOwner(ACTION_NEWLIST);
+		GameObject obj=Game::CreateVehicle(aus_proto,ber_nam);
+		obj.Show();
+		obj.SetPosition(Game::GetCommandPos());
+		obj.SetUserData(Caller->GetID());
+		obj.AssignCommand("Ausrichtung_go");
+		obj.AssignCommand("Drehen_li");
+		obj.AssignCommand("Drehen_re");
+		obj.AssignCommand("Ausrichtung_del");
+		obj.SetPlayerMP(Caller->GetPlayerMP());
+	}
+};
+object Drehen_li: CommandScript
+{
+	Drehen_li()
+	{
+		SetIcon("rechts");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		float dreh2[9];
+		float dreh[9];
+		float winkel=childID==0?(Input::LShiftPressed()?90:10):childID;
+		Caller->GetRotation(dreh[0], dreh[1], dreh[2], dreh[3], dreh[4], dreh[5], dreh[6], dreh[7], dreh[8]);
+		Math::EulerToMatrix(winkel, 0.f, 0.f, dreh2);
+		Math::MultiplyMatrices(dreh2, dreh);
+		Caller->SetRotation(dreh2[0], dreh2[1], dreh2[2], dreh2[3], dreh2[4], dreh2[5], dreh2[6], dreh2[7], dreh2[8]);
+	}
+};
+object Drehen_re: CommandScript
+{
+	Drehen_re()
+	{
+		SetIcon("links");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return true;
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Caller->PushActionExecuteCommand(ACTION_INSERT,"Drehen_li",Target,Input::LShiftPressed()?-90:-10);
+	}
+};
+object Ausrichtung_go: CommandScript
+{
+	Ausrichtung_go()
+	{
+		SetIcon("sendto");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return Caller->GetID()==Target->GetID();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		if(childID==0){
+			if(Target->HasNamePrefix("Ausr_"))Vehicle v(&Game::GetActor(Caller->GetUserData()));
+			else Vehicle v(Target);
+			if (v.IsCommandEnabled("MoveTo")) {
+				v.PushActionMove(ACTION_NEWLIST,Caller->GetPosition());
+				v.PushActionExecuteCommand(ACTION_APPEND,"Ausrichtung_go",Caller,2,false);
+				v.PushActionExecuteCommand(ACTION_APPEND,"Ausrichtung_go",Caller,1,false);
+			}
+		} else if(childID==1){
+			Caller->SetPosition(Target->GetPosition());
+			Caller->SetRotation(&GameObject(Target));
+			if (Target->HasNamePrefix("Ausr_"))GameObject(Target).PushActionDeleteOwner(ACTION_NEWLIST);
+			else Caller->EnableBlueLights(false);
+		} else if(childID==2){
+			if (Caller->DistanceXY(&GameObject(Target))>150)
+				Caller->PushActionMoveToPoint(ACTION_INSERT,&GameObject(Target),Caller->GetSpeed());
+		}
+	}
+};
+object Ausrichtung_del: CommandScript
+{
+	Ausrichtung_del()
+	{
+		SetIcon("stop");
+	}
+
+	bool CheckPossible(GameObject *Caller)
+	{
+		return true;
+	}
+	
+	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+	{
+		return Caller->GetID()==Target->GetID();
+	}
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+		Vector pos=Caller->GetPosition();
+		Caller->SetPlacementNone();
+		Caller->Deselect();
+		Caller->SetPosition(Vector(pos.x,pos.y,pos.z-50));
+		Caller->SetSelectable(false);
+	}
+};

@@ -1,0 +1,83 @@
+/* **************************************************************************** */
+/* Florian Hamburg Mod                                                          */
+/* Copyright © Eins Eins Zwo Modifications - www.112-mods.de	                */
+/*                                                                              */
+/* DEKON_LOGIK.SCRIPT - Sämtliche Scripts für das Dekon-Fahrzeug.		*/
+/*                                                                              */
+/* Diese Commandscript enthält alle zum Dekon zugehörigen Scripts und 		*/
+/* veranlasst eine Evakuierung eines Gefahrebereichs       			*/
+/* automatisch zum Dekon-Fahrzeug. Hier werden sich alle kontaminierten         */
+/* Personen dann ansammeln.                                                     */
+/*                                                                              */
+/* Original-Script: MotoNero			 				*/
+/* Änderungen von : Eins Eins Zwo Modifications                                 */
+/*                                                                              */
+/* 16.09.2007, SM,   Initial-Version                                            */
+/* 19.09.2007, SM,   Bezeichnung/Namen des Dekon-Fahrzeugs geändert.            */
+/*                                                                              */
+/* **************************************************************************** */
+
+object VCmdEvacToDekon : CommandScript
+{
+	VCmdEvacToDekon()
+ 	{                                                                                                         
+ 		SetIcon("evacuate");
+ 		SetCursor("evacuate");
+ 		SetRestrictions(RESTRICT_SELFEXECUTE);
+	}                                               
+
+	bool CheckPossible(GameObject *Caller)
+ 	{
+ 		if (!Caller->IsValid())
+ 			return false;
+ 
+ 		if (Caller->GetType() == ACTOR_VEHICLE ||Caller->GetType() == ACTOR_PERSON)
+ 		{
+ 			return true;
+ 		}
+ 
+ 		return false;
+ 	}
+
+  	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+ 	{
+ 		return true;
+ 	}
+
+
+	void PushActions(GameObject *Caller, Actor *Target, int childID)
+	{
+	
+		GameObjectList fzg = Game::GetGameObjects("f32_wlf_dekon");
+		if(fzg.GetNumObjects() > 0)
+		{
+			GameObject *o = fzg.GetObject(0);
+			Vehicle v(o);
+			Vector TargetPosition = v.GetPosition();
+		}
+
+		Vehicle f(Caller);
+		Vector AudPos = f.GetPosition();
+		int ref = f.GetUserData();
+		if(!Audio::IsPlaying(ref))
+		{
+			int schleife=Audio::PlaySample("mod:Audio/FX/voices/hints/sammelpunkt.wav");
+		}
+
+		GameObjectList liste = Caller->GetObjectsInRange(25000.0f, ACTOR_PERSON);
+		for(int i = 0; i < liste.GetNumObjects(); i++)
+		{
+			GameObject *obj = liste.GetObject(i);
+			Person p(obj);
+			if(p.IsContaminated(CONTAMINATION_ATOMIC) || p.IsContaminated(CONTAMINATION_CHEMICAL) || p.IsContaminated(CONTAMINATION_BIOLOGICAL)) && (!p.IsCarried() && !p.IsArrested() && !p.IsLinkedWithPerson()))
+			{
+				Vector Ziel = o->GetPosition();
+				p.ClearActions();
+				p.RemoveObjectPath();
+				p.PushActionMove(ACTION_NEWLIST,Ziel);
+				p.PushActionTurnTo(ACTION_APPEND, o);
+				p.PushActionWait(ACTION_APPEND, 360.0f);
+			}
+		}
+	}
+};
