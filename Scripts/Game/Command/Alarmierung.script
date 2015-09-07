@@ -2823,7 +2823,7 @@ object rufe_fahrzeug : CommandScript
     			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
     			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-                if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+                if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 
 		        break;
 
@@ -3020,7 +3020,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 4:
@@ -3173,7 +3173,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 5:
@@ -3481,7 +3481,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 		
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
         break;
 
 		case 7:
@@ -3547,7 +3547,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 
 		break;
 
@@ -3603,7 +3603,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
@@ -3656,7 +3656,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 10:
@@ -3709,7 +3709,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 11:
@@ -3761,7 +3761,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 12:
@@ -3914,7 +3914,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
@@ -4112,7 +4112,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 14:
@@ -4265,7 +4265,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 15:
@@ -4573,7 +4573,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 18:
@@ -4626,7 +4626,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 19:
@@ -4692,7 +4692,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 20:
@@ -4749,7 +4749,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 21:
@@ -4902,7 +4902,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 		case 22:
@@ -5098,7 +5098,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
@@ -5251,7 +5251,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
@@ -5560,7 +5560,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
@@ -5613,7 +5613,7 @@ object rufe_fahrzeug : CommandScript
 			Obj->PushActionExecuteCommand(ACTION_APPEND,"CloseGate",Obj,0,true);
 			Obj->PushActionExecuteCommand(ACTION_APPEND, "DUMMYDisableSiren", Caller, 2, false);
 
-            if (Game::IsMultiplayer()) { v.SetPlayerMP(Caller.GetPlayerMP()); }
+            if (Game::IsMultiplayer()) { Obj->SetPlayerMP(Caller.GetPlayerMP()); }
 		break;
 
 
