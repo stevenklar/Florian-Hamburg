@@ -1,0 +1,162 @@
+const int MAX_FZ = 71; //Gesamtanzahl der Fahrzeuge plus 2
+const char * kennung[MAX_FZ];
+
+// FEUER- UND RETTUNGSWACHE ALTONA (F-12)
+kennung[1]="f12_klf";
+kennung[2]="f12_hlf1";
+kennung[3]="f12_hlf2";
+kennung[4]="f12_tmf";
+kennung[5]="f12_rtwa";
+kennung[6]="f12_rtwb";
+kennung[7]="f12_bdienst";
+kennung[8]="f12_wlf_asgw";
+kennung[9]="f12_gwh";
+kennung[10]="f12_rw";
+kennung[11]="f12_grtw";
+
+// FEUER- UND RETTUNGSWACHE BERLINER TOR (F-22)
+kennung[12]="f22_klf";
+kennung[13]="f22_hlf1";
+kennung[14]="f22_tmf";
+kennung[15]="f22_rtwa";
+kennung[16]="f22_rtwb";
+kennung[17]="f22_rtwc";
+kennung[18]="f22_gw";
+kennung[19]="f22_adienst";
+kennung[20]="f22_bfw";
+
+// FEUER- UND RETTUNGSWACHE VEDDEL (F-33)
+kennung[21]="f33_klf";
+kennung[22]="f33_hlf1";
+kennung[23]="f33_tmf";
+kennung[24]="f33_rtwa";
+kennung[25]="f33_rtwk";
+kennung[26]="f33_gwrd";
+
+// FREIWILLIGE FEUERWEHR ROTHENBURGSORT/VEDDEL (F-3917)
+kennung[27]="f3917_hlf1";
+kennung[28]="f3917_hlf2";
+
+// FEUER- UND RETTUNGSWACHE BILLSTEDT (F-25) (AUSSERHALB)
+kennung[29]="f25_segt";
+
+// TECHNIK- UND UMWELTWACHE (F-32) (AUSSERHALB)
+kennung[30]="f32_udienst";
+kennung[31]="f32_kmrd";
+kennung[32]="f32_wlf_dekon";
+kennung[33]="f32_kran";
+
+// NOTARZTEINSATZFAHRZEUGE F-22 (KRANKENHAUS) UND F-14 (AUSSERHALB) SOWIE DES BUNDESWEHR-KRANKENHAUSES (AUSSERHALB)
+kennung[34]="f14_nef";
+kennung[35]="f22_nef";
+kennung[36]="bwk_nef";
+
+// POLIZEIWACHE NORD
+kennung[37]="pol_nord_stw1";
+kennung[38]="pol_nord_stw2";
+kennung[39]="pol_nord_stw3";
+kennung[40]="pol_nord_stw4";
+kennung[41]="pol_nord_mtw1";
+kennung[42]="pol_nord_kripo1";
+kennung[43]="pol_nord_kripo2";
+
+// POLIZEIWACHE SUED
+kennung[44]="pol_sued_stw1";
+kennung[45]="pol_sued_stw2";
+kennung[46]="pol_sued_stw3";
+
+// THW (AUSSERHALB)
+kennung[47]="thw_elw1";
+kennung[48]="thw_mlw1";
+kennung[49]="thw_unimog1";
+
+// SONSTIGE (ENTSTOERDIENST WASSER, ABESCHLEPPFAHRZEUGE, BESTATTER ETC.)
+kennung[50]="entstoerdienst";
+kennung[51]="asf1";
+kennung[52]="asf2";
+kennung[53]="feuerwehr_asf";
+kennung[54]="bestatter";
+
+// ASB
+kennung[55]="asb_naw";
+kennung[56]="asb_rtw1";
+kennung[57]="asb_rtw2";
+kennung[58]="asb_rtw3";
+
+// FEUER- UND RETTUNGSWACHE BARMBEK (F-23)
+kennung[59]="f23_klf";
+kennung[60]="f23_hlf1";
+kennung[61]="f23_hlf2";
+kennung[62]="f23_dlk";
+kennung[63]="f23_rtwa";
+kennung[64]="f23_rtwb";
+kennung[65]="f23_bdienst";
+
+// RETTUNGSHUBSCHRAUBER CHRISTOPH 29
+kennung[66]="rth_chr29";
+
+// VATTENFALL TECHNIK
+kennung[67]="vattenfall";
+
+// ZUSÄTZLICHE RTW'S F-12 UND F-23
+kennung[68]="f12_rtwc";
+kennung[69]="f23_rtwc";
+
+object openPlayerOptionsMenu : CommandScript
+{
+    openPlayerOptionsMenu()
+    {
+        SetRestrictions(RESTRICT_SELFEXECUTE);
+    }
+
+    bool CheckPossible(GameObject *Caller) { return true; }
+    bool CheckTarget(GameObject *Caller, Actor *Target, int childID) { return true; }
+
+    void PushActions(GameObject *Caller, Actor *Target, int childID)
+    {
+
+    }
+};
+
+// openPlayerOneMenu
+
+object setPlayerOneFireDepartmentNorth : CommandScript
+{
+    openPlayerOptionsMenu()
+    {
+        SetRestrictions(RESTRICT_SELFEXECUTE);
+    }
+
+    bool CheckPossible(GameObject *Caller) { return true; }
+    bool CheckTarget(GameObject *Caller, Actor *Target, int childID) { return true; }
+
+    void PushActions(GameObject *Caller, Actor *Target, int childID)
+    {
+        GameObjectList vehicles = Game::GetGameObjects(TYPE_VEHICLE);
+
+        for(int i=0; i < vehicles.GetNumObjects(); i++) {
+            GameObject *Obj = vehicles.GetObject(i);
+
+            if (Obj->HasCommand("f12_klf") ||
+                Obj->HasCommand("f12_klf") ||
+                Obj->HasCommand("f12_hlf1") ||
+                Obj->HasCommand("f12_hlf2") ||
+                Obj->HasCommand("f12_tmf") ||
+                Obj->HasCommand("f12_rtwa") ||
+                Obj->HasCommand("f12_rtwb") ||
+                Obj->HasCommand("f12_bdienst") ||
+                Obj->HasCommand("f12_wlf_asgw") ||
+                Obj->HasCommand("f12_gwh") ||
+                Obj->HasCommand("f12_rw") ||
+                Obj->HasCommand("f12_grtw")) {
+
+                Vehicle v(Obj);
+                v.SetPlayerMP(0);
+            }
+        }
+    }
+};
+
+// setPlayerOneFireDepartmentSouth
+// setPlayerOneAmbulance
+// setPlayerOnePolice

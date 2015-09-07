@@ -1,0 +1,27 @@
+object debug : CommandScript
+{
+    debug()
+    {
+        SetIcon("sendto");
+        SetCursor("sendto");
+        SetValidTargets(ACTOR_PERSON | ACTOR_VEHICLE);
+    }
+
+    bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
+    {
+        return true;
+    }
+
+    void PushActions(GameObject *Caller, Actor *Target, int childID)
+    {
+        if (Target->GetType() == ACTOR_VEHICLE) {
+            Vehicle v(Target);
+            v.Hide();
+        }
+
+        if (Target->GetType() == ACTOR_PERSON) {
+            Person p(Target);
+            p.Hide();
+        }
+    }
+};
