@@ -1472,10 +1472,8 @@ object kaufen : CommandScript
 			ersatz=true;
 		}
 
-
 		switch (q)
 		{
-
 		// FEUER- UND RETTUNGSWACHE ALTONA (F-12)
 
 		// F-12 KLF
@@ -1554,10 +1552,6 @@ object kaufen : CommandScript
 			vec.SetPlayerMP(1);
 		}
 		break;
-
-
-
-
 
         // F-12 HLF2
 		case 3:

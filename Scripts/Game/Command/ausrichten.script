@@ -11,9 +11,12 @@ object ausrichter_setzen : CommandScript
 		SetCursor("sendto");
 		SetValidTargets(ACTOR_STREET|ACTOR_FLOOR);
 	}
-	bool CheckPossible(GameObject *Caller){
+
+	bool CheckPossible(GameObject *Caller)
+	{
 		return Caller->IsCommandEnabled("MoveTo");
 	}
+
 	bool CheckTarget(GameObject *Caller, Actor *Target, int childID)
 	{
 		return true;
@@ -33,6 +36,7 @@ object ausrichter_setzen : CommandScript
 		obj.AssignCommand("Drehen_re");
 		obj.AssignCommand("Ausrichtung_del");
 		obj.SetPlayerMP(Caller->GetPlayerMP());
+		obj.Select();
 	}
 };
 object Drehen_li: CommandScript
