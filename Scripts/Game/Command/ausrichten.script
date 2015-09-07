@@ -36,6 +36,8 @@ object ausrichter_setzen : CommandScript
 		obj.AssignCommand("Drehen_re");
 		obj.AssignCommand("Ausrichtung_del");
 		obj.SetPlayerMP(Caller->GetPlayerMP());
+
+		Caller->Deselect();
 		obj.Select();
 	}
 };
@@ -108,20 +110,23 @@ object Ausrichtung_go: CommandScript
 
 	void PushActions(GameObject *Caller, Actor *Target, int childID)
 	{
-		if(childID==0){
-			if(Target->HasNamePrefix("Ausr_"))Vehicle v(&Game::GetActor(Caller->GetUserData()));
+		if(childID==0) {
+			if(Target->HasNamePrefix("Ausr_")) Vehicle v(&Game::GetActor(Caller->GetUserData()));
 			else Vehicle v(Target);
+
 			if (v.IsCommandEnabled("MoveTo")) {
 				v.PushActionMove(ACTION_NEWLIST,Caller->GetPosition());
 				v.PushActionExecuteCommand(ACTION_APPEND,"Ausrichtung_go",Caller,2,false);
 				v.PushActionExecuteCommand(ACTION_APPEND,"Ausrichtung_go",Caller,1,false);
 			}
-		} else if(childID==1){
+			
+			Caller->Deselect();
+		} else if(childID==1) {
 			Caller->SetPosition(Target->GetPosition());
 			Caller->SetRotation(&GameObject(Target));
 			if (Target->HasNamePrefix("Ausr_"))GameObject(Target).PushActionDeleteOwner(ACTION_NEWLIST);
 			else Caller->EnableBlueLights(false);
-		} else if(childID==2){
+		} else if(childID==2) {
 			if (Caller->DistanceXY(&GameObject(Target))>150)
 				Caller->PushActionMoveToPoint(ACTION_INSERT,&GameObject(Target),Caller->GetSpeed());
 		}
